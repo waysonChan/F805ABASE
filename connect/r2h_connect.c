@@ -75,7 +75,7 @@ int r2h_connect_init(r2h_connect_t *C, system_param_t *S)
 	err |= r2h_rs485_init(C, baud_table[S->rs485.baud_rate]);
 	err |= r2h_usb_init(C, 115200);
 	err |= r2h_wifi_init(C, 115200);
-	err |= wiegand_init(C);
+	err |= wiegand_init(C, S->pre_cfg.wg_pulse_width);
 	
 	return err;
 }

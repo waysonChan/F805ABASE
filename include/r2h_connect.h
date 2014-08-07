@@ -86,7 +86,7 @@ int r2h_connect_check_in(r2h_connect_t *C, int conn_type);
 int r2h_connect_init(r2h_connect_t *C, system_param_t *S);
 
 ssize_t wiegand_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes);
-int wiegand_init(r2h_connect_t *C);
+int wiegand_init(r2h_connect_t *C, int pulse_width);
 int r2h_usb_init(r2h_connect_t *C, int baud_rate);
 int r2h_wifi_init(r2h_connect_t *C, int baud_rate);
 

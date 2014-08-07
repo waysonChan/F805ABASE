@@ -140,6 +140,8 @@ typedef struct {
 	int work_mode;		/* 0 */
 	int wg_start;		/* 160 */
 	int wg_len;		/* 161 */
+	int wg_pulse_width;	/* 220: Âö³å¿í¶È100us */
+	int wg_pulse_periods;	/* 221: Âö³åÖÜÆÚ1ms */
 	int tid_len;		/* 162 */
 
 	int hop_freq_enable;

@@ -94,6 +94,24 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				goto out;
 			}
 			break;
+		case 220:	/* pulse width */
+			if (im_val < 1 || im_val > 20) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			} else {
+				S->pre_cfg.wg_pulse_width = im_val;
+				cfg_set_pre_cfg(&S->pre_cfg);
+			}
+			break;
+		case 221:	/* pulse periods */
+			if (im_val < 10 || im_val > 200) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			} else {
+				S->pre_cfg.wg_pulse_periods = im_val;
+				cfg_set_pre_cfg(&S->pre_cfg);
+			}
+			break;
 		case 239:	/* operation type */
 			if (im_val == OPERATE_READ_EPC
 				|| im_val == OPERATE_READ_TID
@@ -159,6 +177,12 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			break;
 		case 162:	/* tid length */
 			ex_val = S->pre_cfg.tid_len;
+			break;
+		case 220:	/* pulse width */
+			ex_val = S->pre_cfg.wg_pulse_width;
+			break;
+		case 221:	/* pulse periods */
+			ex_val = S->pre_cfg.wg_pulse_periods;
 			break;
 		case 239:	/* operation type */
 			ex_val = S->pre_cfg.oper_mode;

@@ -8,6 +8,7 @@
 
 #define WG_26_CMD	_IO('p', 0x01)
 #define WG_34_CMD	_IO('p', 0x02)
+#define PULSE_WIDTH_CMD	_IO('p', 0x03)
 
 ssize_t wiegand_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 {
@@ -24,11 +25,16 @@ ssize_t wiegand_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 	return ioctl(C->wg_fd, cmd, buf);
 }
 
-int wiegand_init(r2h_connect_t *C)
+int wiegand_init(r2h_connect_t *C, int pulse_width)
 {
 	C->wg_fd = open("/dev/wgout", O_RDONLY | O_NONBLOCK);
 	if (C->wg_fd < 0) {
 		log_ret("wiegand_init error");
+		return -1;
+	}
+
+	if (ioctl(C->wg_fd, PULSE_WIDTH_CMD, pulse_width * 100) < 0) {
+		log_ret("wiegand_init: ioctl error");
 		return -1;
 	}
 

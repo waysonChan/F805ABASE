@@ -579,6 +579,8 @@ int cfg_get_pre_cfg(pre_cfg_t *pre_cfg)
 		&& config_setting_lookup_int(s, "work_mode", &pre_cfg->work_mode)
 		&& config_setting_lookup_int(s, "wg_start", &pre_cfg->wg_start)
 		&& config_setting_lookup_int(s, "wg_len", &pre_cfg->wg_len)
+		&& config_setting_lookup_int(s, "wg_pulse_width", &pre_cfg->wg_pulse_width)
+		&& config_setting_lookup_int(s, "wg_pulse_periods", &pre_cfg->wg_pulse_periods)
 		&& config_setting_lookup_int(s, "tid_len", &pre_cfg->tid_len)
 		&& config_setting_lookup_int(s, "hop_freq_enable", &pre_cfg->hop_freq_enable)
 		)) {
@@ -639,6 +641,16 @@ int cfg_set_pre_cfg(pre_cfg_t *pre_cfg)
 	s = config_lookup(&cfg, "pre_cfg.wg_len");
 	if (s) {
 		config_setting_set_int(s, pre_cfg->wg_len);
+	}
+
+	s = config_lookup(&cfg, "pre_cfg.wg_pulse_width");
+	if (s) {
+		config_setting_set_int(s, pre_cfg->wg_pulse_width);
+	}
+
+	s = config_lookup(&cfg, "pre_cfg.wg_pulse_periods");
+	if (s) {
+		config_setting_set_int(s, pre_cfg->wg_pulse_periods);
 	}
 
 	s = config_lookup(&cfg, "pre_cfg.tid_len");
