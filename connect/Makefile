@@ -1,0 +1,11 @@
+obj-y += r2h_connect.o
+obj-y += r2h_tcp.o
+obj-y += r2h_udp.o
+obj-y += r2h_rs232.o
+obj-y += r2h_rs485.o
+obj-y += ap_connect.o
+obj-y += report_tag.o
+obj-y += rs232.o
+obj-y += wiegand.o
+obj-y += r2h_usb.o
+obj-y += r2h_wifi.o

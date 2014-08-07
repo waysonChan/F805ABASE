@@ -1,0 +1,10 @@
+obj-y += command.o
+obj-y += command_manager.o
+obj-y += cmdset_integration_app.o
+obj-y += cmdset_param_man.o
+obj-y += cmdset_reader_man.o
+obj-y += cmdset_sys_control.o
+obj-y += cmdset_transmit_control.o
+obj-y += cmdset_time_man.o
+obj-y += cmdset_18k6c_man.o
+obj-y += cmdset_extend_board.o
