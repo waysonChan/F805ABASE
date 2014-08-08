@@ -102,6 +102,13 @@ static void ec_18k6c_read_epc(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 	const uint8_t *cmd_param = C->recv.frame.param_buf;
 	int ant_index = *(cmd_param);
 
+	/* i802s 不能设置为轮询模式 */
+	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
+		|| ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4)) {
+		if (ant_index == 0) 
+			ant_index = 1;
+	}
+	
 	if (C->recv.frame.param_len < 4) {
 		err = ERRCODE_CMD_FRAME;
 		goto out;
@@ -164,6 +171,13 @@ static void ec_18k6c_read_tid(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 	uint8_t err = CMD_EXE_SUCCESS;
 	const uint8_t *cmd_param = C->recv.frame.param_buf;
 	int ant_index = *(cmd_param);
+
+	/* i802s 不能设置为轮询模式 */
+	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
+		|| ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4)) {
+		if (ant_index == 0) 
+			ant_index = 1;
+	}
 
 	if (C->recv.frame.param_len < 4) {
 		err = ERRCODE_CMD_FRAME;
@@ -230,6 +244,13 @@ static void ec_18k6c_read_epc_tid(r2h_connect_t *C, system_param_t *S, ap_connec
 	uint8_t err = CMD_EXE_SUCCESS;
 	const uint8_t *cmd_param = C->recv.frame.param_buf;
 	int ant_index = *(cmd_param);
+
+	/* i802s 不能设置为轮询模式 */
+	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
+		|| ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4)) {
+		if (ant_index == 0) 
+			ant_index = 1;
+	}
 
 	if (C->recv.frame.param_len < 4) {
 		err = ERRCODE_CMD_FRAME;

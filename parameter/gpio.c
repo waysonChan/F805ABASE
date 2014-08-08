@@ -132,6 +132,14 @@ int get_active_antenna(void)
 int set_active_antenna(system_param_t *S, int ant_index)
 {
 	int err1, err2;
+
+	if ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4) {
+		if (ant_index == 1) {
+			ant_index = 4;
+		} else if (ant_index == 4) {
+			ant_index = 1;
+		}
+	}
 	
 	switch (ant_index) {
 	case 1:
@@ -162,7 +170,7 @@ int set_active_antenna(system_param_t *S, int ant_index)
 	 * 更新参数读写器参数
 	 */
 	S->cur_ant = ant_index;
-	set_antenna_led_status(ant_index, LED_COLOR_RED);
+	set_antenna_led_status(ant_index, LED_COLOR_RED, S->pre_cfg.dev_type);
 
 	return 0;
 }
@@ -205,11 +213,11 @@ int set_next_active_antenna(system_param_t *S)
 
 	/* 如果下一个天线等于当前天线则什么也不做 */
 	if (next_ant_index == S->cur_ant) {
-		set_antenna_led_status(S->cur_ant, LED_COLOR_RED);
+		set_antenna_led_status(S->cur_ant, LED_COLOR_RED, S->pre_cfg.dev_type);
 		return 0;
 	}
 
-	set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN);
+	set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
 	set_active_antenna(S, next_ant_index);
 	return 0;
 }
@@ -242,10 +250,35 @@ static inline gpio_index_e get_gpio_index(int ant_index, led_color_e color)
 	return err;
 }
 
-int set_antenna_led_status(int ant_index, led_color_e color)
+/*
+ * 由于硬件接线的原因，I802S的天线指示灯都接的天线2的指示灯
+ */
+int set_antenna_led_status(int ant_index, led_color_e color, int dev_type)
 {
 	int err1 = -1;
 	int err2 = -1;
+
+	switch (dev_type & DEV_TYPE_BASE_MASK) {
+	case DEV_TYPE_BASE_F805S:
+		break;
+	case DEV_TYPE_BASE_I802S_ANT4:
+		if (ant_index == 4) {
+			ant_index = 2;
+		} else if (ant_index == 2) {
+			ant_index = 4;
+		}
+		break;
+	case DEV_TYPE_BASE_I802S_ANT1:
+		if (ant_index == 1) {
+			ant_index = 2;
+		} else if (ant_index == 2) {
+			ant_index = 1;
+		}
+		break;
+	default:
+		log_msg("set_antenna_led_status: invalid dev_type");
+		return -1;
+	}
 
 	gpio_index_e green = get_gpio_index(ant_index, LED_COLOR_GREEN);
 	gpio_index_e red = get_gpio_index(ant_index, LED_COLOR_RED);

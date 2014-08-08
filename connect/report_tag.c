@@ -117,6 +117,15 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 		log_msg("report_tag_send: invalid cmd_id");
 		return -1;
 	}
+
+	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
+		|| ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4)) {
+		if (ptag->ant_index == 1) {
+			ptag->ant_index = 4;
+		} else if (ptag->ant_index == 4) {
+			ptag->ant_index = 1;
+		}
+	}
 	
 	if (((S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) && (C->conn_type == R2H_NONE))
 		|| ((S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) && (C->conn_type == R2H_WIFI))

@@ -289,7 +289,7 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			}
 			break;
 		case WS_STOP:
-			set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN);
+			set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
 			break;
 		default:
 			log_msg("process_cmd_packets: invalid work mode");

@@ -577,6 +577,7 @@ int cfg_get_pre_cfg(pre_cfg_t *pre_cfg)
 		&& config_setting_lookup_int(s, "gpo_mode", &pre_cfg->gpo_mode)
 		&& config_setting_lookup_int(s, "oper_mode", &pre_cfg->oper_mode)
 		&& config_setting_lookup_int(s, "work_mode", &pre_cfg->work_mode)
+		&& config_setting_lookup_int(s, "dev_type", &pre_cfg->dev_type)
 		&& config_setting_lookup_int(s, "wg_start", &pre_cfg->wg_start)
 		&& config_setting_lookup_int(s, "wg_len", &pre_cfg->wg_len)
 		&& config_setting_lookup_int(s, "wg_pulse_width", &pre_cfg->wg_pulse_width)
@@ -631,6 +632,11 @@ int cfg_set_pre_cfg(pre_cfg_t *pre_cfg)
 	s = config_lookup(&cfg, "pre_cfg.work_mode");
 	if (s) {
 		config_setting_set_int(s, pre_cfg->work_mode);
+	}
+
+	s = config_lookup(&cfg, "pre_cfg.dev_type");
+	if (s) {
+		config_setting_set_int(s, pre_cfg->dev_type);
 	}
 
 	s = config_lookup(&cfg, "pre_cfg.wg_start");

@@ -65,6 +65,18 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				goto out;
 			}
 			break;
+		case 1:		/* device type */
+			if ((im_val >= 0x00 && im_val <= 0x02)
+				|| (im_val >= 0x10 && im_val <= 0x12)
+				|| (im_val >= 0x20 && im_val <= 0x22)
+				) {
+				S->pre_cfg.dev_type = im_val;
+				cfg_set_pre_cfg(&S->pre_cfg);
+			} else {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			break;
 		case 159:	/* serial port speed */
 			S->rs232.baud_rate = im_val;
 			cfg_set_rs232(&S->rs232, CFG_BAUD_RATE);
@@ -166,6 +178,9 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		case 0:		/* work mode */
 			ex_val = S->pre_cfg.work_mode;
 			break;
+		case 1:		/* device type */
+			ex_val = S->pre_cfg.dev_type;
+			break;
 		case 159:	/* serial port speed */
 			ex_val = S->rs232.baud_rate;
 			break;
@@ -235,9 +250,9 @@ static void ec_ante_param_config(r2h_connect_t *C, system_param_t *S, ap_connect
 	for (i = 0; i < ANTENNA_NUM; i++) {
 		S->ant_array[i].enable = cmd_param[i];
 		if (cmd_param[i]) {
-			set_antenna_led_status(i+1, LED_COLOR_GREEN);
+			set_antenna_led_status(i+1, LED_COLOR_GREEN, S->pre_cfg.dev_type);
 		} else {
-			set_antenna_led_status(i+1, LED_COLOR_NONE);
+			set_antenna_led_status(i+1, LED_COLOR_NONE, S->pre_cfg.dev_type);
 		}
 		S->ant_array[i].rfpower = cmd_param[i+4];
 		S->ant_array[i].switch_time = cmd_param[i+8];

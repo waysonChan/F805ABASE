@@ -241,7 +241,7 @@ system_param_t *sys_param_new(void)
 	cfg_get_eth0(&S->eth0);
 	cfg_get_pre_cfg(&S->pre_cfg);
 
-	memcpy(S->sysinfo.mcu_swrev, "1.31", sizeof("1.31"));
+	memcpy(S->sysinfo.mcu_swrev, "1.40", sizeof("1.40"));
 
 	/* ÅäÖÃ eth0 */
 	uint8_t mac[6];
@@ -312,9 +312,9 @@ system_param_t *sys_param_new(void)
 		}
 		
 		if (S->ant_array[i].enable) {
-			set_antenna_led_status(i+1, LED_COLOR_GREEN);
+			set_antenna_led_status(i+1, LED_COLOR_GREEN, S->pre_cfg.dev_type);
 		} else {
-			set_antenna_led_status(i+1, LED_COLOR_NONE);
+			set_antenna_led_status(i+1, LED_COLOR_NONE, S->pre_cfg.dev_type);
 		}	
 	}
 

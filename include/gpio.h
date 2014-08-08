@@ -66,7 +66,7 @@ int set_gpio_status(gpio_index_e gpio_index, char val);
 int get_active_antenna(void);
 int set_active_antenna(system_param_t *S, int ant_index);
 int set_next_active_antenna(system_param_t *S);
-int set_antenna_led_status(int ant_index, led_color_e color);
+int set_antenna_led_status(int ant_index, led_color_e color, int dev_type);
 int beep(beep_action_e action);
 int get_btns_status(uint8_t *btns_val);
 int gpo_pulse_timer_trigger(gpo_index_e gpo_idx, int pulse_timer);

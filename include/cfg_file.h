@@ -131,6 +131,22 @@ typedef struct {
 #define WORK_MODE_AUTOMATIC	1
 #define WORK_MODE_TRIGGER	2
 
+/*
+ * dev_type:
+ * 	bit3-bit0: 表示基础设备类型，默认支持网口，232，485，韦根
+ *		0 - F805S
+ *		1 - I802-ANT4
+ *		2 - I802-ANT1
+ *	bit4: WIFI
+ *	bit5: GPRS
+ */
+#define DEV_TYPE_FLAG_WIFI		(0x01 << 4)
+#define DEV_TYPE_FLAG_GPRS		(0x01 << 5)
+#define DEV_TYPE_BASE_MASK		0x0F
+#define DEV_TYPE_BASE_F805S		0x00
+#define DEV_TYPE_BASE_I802S_ANT4	0x01
+#define DEV_TYPE_BASE_I802S_ANT1	0x02
+
 typedef struct {
 	int ant_idx;		/* 240: 天线端口 */
 	int upload_mode;	/* 241: 处理模式 */
@@ -138,6 +154,7 @@ typedef struct {
 	int oper_mode;		/* 239: 操作模式 */
 
 	int work_mode;		/* 0 */
+	int dev_type;		/* 1 */
 	int wg_start;		/* 160 */
 	int wg_len;		/* 161 */
 	int wg_pulse_width;	/* 220: 脉冲宽度100us */
