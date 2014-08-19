@@ -589,8 +589,13 @@ int r2000_set_ant_rfpower(system_param_t *S, ap_connect_t *A)
 	}
 
 	/* 天线功率 */
-	write_mac_register(A, HST_ANT_DESC_RFPOWER, 
-		RFPOWER_F806_TO_R2000(S->ant_array[S->cur_ant-1].rfpower));
+	if ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4) {
+		write_mac_register(A, HST_ANT_DESC_RFPOWER, 
+			RFPOWER_F806_TO_R2000(S->ant_array[0].rfpower));
+	} else {
+		write_mac_register(A, HST_ANT_DESC_RFPOWER, 
+			RFPOWER_F806_TO_R2000(S->ant_array[S->cur_ant-1].rfpower));
+	}
 	return 0;
 }
 

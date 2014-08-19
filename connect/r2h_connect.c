@@ -76,6 +76,7 @@ int r2h_connect_init(r2h_connect_t *C, system_param_t *S)
 	err |= r2h_usb_init(C, 115200);
 	err |= r2h_wifi_init(C, 115200);
 	err |= wiegand_init(C, S->pre_cfg.wg_pulse_width);
+	err |= r2h_gprs_init(C, S);
 	
 	return err;
 }

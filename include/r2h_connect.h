@@ -56,7 +56,7 @@ typedef struct {
 	int tcp_port;
 	int gprs_timer;	
 	struct sockaddr_in server_addr;
-} r2h_gprs_t;
+} gprs_priv_t;
 
 #define R2H_NONE	-1
 #define R2H_TCP		0
@@ -76,7 +76,7 @@ struct r2h_connect {
 	r2h_send_t send;
 	int conn_type;
 	int wg_fd;
-	r2h_gprs_t r2h_gprs;
+	gprs_priv_t gprs_priv;
 	struct sockaddr_in udp_client_addr;	/* UDP×¨ÓÃ */
 	r2h_t r2h[R2H_TOTAL];
 };
@@ -102,5 +102,11 @@ int r2h_wifi_init(r2h_connect_t *C, int baud_rate);
 
 ssize_t r2h_wifi_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes);
 ssize_t r2h_wifi_recv(r2h_connect_t *C, uint8_t *buf, size_t nbytes);
+
+int gprs_cheek_connection(r2h_connect_t *C);
+int r2h_gprs_close(r2h_connect_t *C);
+int r2h_gprs_timer_trigger(r2h_connect_t *C);
+int r2h_gprs_init(r2h_connect_t *C, system_param_t *S);
+
 
 #endif	/* _R2H_CONNECTION_H */

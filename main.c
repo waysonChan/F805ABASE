@@ -37,16 +37,16 @@ int main(int argc, char *argv[])
 	while (1) {
 		int i, ret, maxfd = 0;
 		int r2h_fd = C->r2h[C->conn_type].fd;
-		fd_set readset;
+		fd_set readset, writeset;
 		FD_ZERO(&readset);
 
 		maxfd = A->fd;
 		FD_SET(A->fd, &readset);
 
-		maxfd = (maxfd >= A->tag_report.filter_timer) ? maxfd : A->tag_report.filter_timer;
+		maxfd = MAX(maxfd, A->tag_report.filter_timer);
 		FD_SET(A->tag_report.filter_timer, &readset);
 
-		maxfd = (maxfd >= S->work_status_timer) ? maxfd : S->work_status_timer;
+		maxfd = MAX(maxfd, S->work_status_timer);
 		FD_SET(S->work_status_timer, &readset);
 
 		for (i = 0; i < GPO_NUMBER; i++) {
@@ -57,26 +57,53 @@ int main(int argc, char *argv[])
 		}
 
 		if (C->connected) {
-			maxfd = (maxfd >= r2h_fd) ? maxfd : r2h_fd;
+			maxfd = MAX(maxfd, r2h_fd);
 			FD_SET(r2h_fd, &readset);
 		} else {
 			if (!C->accepted) {
-				maxfd = (maxfd >= C->listener) ? maxfd : C->listener;
+				maxfd = MAX(maxfd, C->listener);
 				FD_SET(C->listener, &readset);
 			}
 			for (i = 0; i < R2H_TOTAL; i++) {
-				if ((i == R2H_TCP) && (!C->accepted))
+				if (((i == R2H_TCP) && (!C->accepted))
+					|| ((i == R2H_GPRS) && (!C->gprs_priv.connected)))
 					continue;
-				maxfd = (maxfd >= C->r2h[i].fd) ? maxfd : C->r2h[i].fd;
+				maxfd = MAX(maxfd, C->r2h[i].fd);
 				FD_SET(C->r2h[i].fd, &readset);
 			}
 		}
 
+		if (C->gprs_priv.in_progress) {
+			maxfd = MAX(maxfd, C->r2h[R2H_GPRS].fd);
+			FD_SET(C->r2h[R2H_GPRS].fd, &writeset);
+		}
+
 		int err = select(maxfd+1, &readset, NULL, NULL, NULL);
 		if (err < 0) {
-			log_sys("select error");
+			log_ret("select error");
 		} else if (err == 0) {
 			continue;
+		}
+
+		if (C->gprs_priv.in_progress && FD_ISSET(C->r2h[R2H_GPRS].fd, &writeset)) {
+			int optval;
+			socklen_t optlen = sizeof(optval);
+
+			if (getsockopt(C->r2h[R2H_GPRS].fd, SOL_SOCKET, SO_ERROR, 
+				&optval, &optlen)) {
+				log_ret("getsockopt error");
+			}
+
+			if (optval || gprs_cheek_connection(C)) {
+				log_msg("main: tcp upload connect unsuccessfully");
+				r2h_gprs_close(C);
+			} else {
+				C->gprs_priv.connected = true;
+				C->conn_type = R2H_GPRS;
+				log_msg("main: tcp upload connect successfully");
+			}
+
+			C->gprs_priv.in_progress = false;
 		}
 
 		if (FD_ISSET(A->fd, &readset)) {

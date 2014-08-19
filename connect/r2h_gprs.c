@@ -64,7 +64,7 @@ static int _addr_init(struct sockaddr_in *paddr, cfg_gprs_t *cfg_gprs)
 
 int r2h_gprs_close(r2h_connect_t *C)
 {
-	C->r2h_gprs.connected = false;
+	C->gprs_priv.connected = false;
 	close(C->r2h[R2H_GPRS].fd);
 	C->r2h[R2H_GPRS].fd = -1;
 	return 0;
@@ -106,11 +106,11 @@ static int _gprs_connect_try(r2h_connect_t *C)
 		goto out;
 	}
 
-	if (connect(C->r2h[R2H_GPRS].fd, (struct sockaddr *)&C->r2h_gprs.server_addr,
+	if (connect(C->r2h[R2H_GPRS].fd, (struct sockaddr *)&C->gprs_priv.server_addr,
 		sizeof(struct sockaddr_in)) < 0) {
 		if (errno == EINPROGRESS) {
 			/* nonblocking and the connection cannot be completed immediately */
-			C->r2h_gprs.in_progress = true;
+			C->gprs_priv.in_progress = true;
 			return 0;
 		}
 		
@@ -118,7 +118,7 @@ static int _gprs_connect_try(r2h_connect_t *C)
 		goto out;
 	}
 
-	C->r2h_gprs.connected = true;
+	C->gprs_priv.connected = true;
 	C->conn_type = R2H_GPRS;
 	log_msg("tcp upload connect successfully");
 	return 0;
@@ -128,12 +128,12 @@ out:
 	return -1;
 }
 
-int r2h_gprs_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
+static int r2h_gprs_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 {
 	int err = -1;
-	r2h_gprs_t *r2h_gprs = &C->r2h_gprs;
+	gprs_priv_t *gprs_priv = &C->gprs_priv;
 
-	if (r2h_gprs->connected) {
+	if (gprs_priv->connected) {
 		err = _gprs_send(C, buf, nbytes);
 		if (err < 0)
 			r2h_gprs_close(C);
@@ -142,10 +142,10 @@ int r2h_gprs_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 	return err;
 }
 
-int r2h_gprs_timer_init(r2h_gprs_t *r2h_gprs)
+static int r2h_gprs_timer_init(gprs_priv_t *gprs_priv)
 {
-	r2h_gprs->r2h_gprs_timer = timerfd_create(CLOCK_REALTIME, 0);
-	if (r2h_gprs->r2h_gprs_timer < 0) {
+	gprs_priv->gprs_timer = timerfd_create(CLOCK_REALTIME, 0);
+	if (gprs_priv->gprs_timer < 0) {
 		log_ret("timerfd_create error");
 		return -1;
 	}
@@ -157,9 +157,9 @@ int r2h_gprs_timer_init(r2h_gprs_t *r2h_gprs)
 		.it_value.tv_nsec = 0,
 	};
 
-	if (timerfd_settime(r2h_gprs->r2h_gprs_timer, 0, &its, NULL) < 0) {
+	if (timerfd_settime(gprs_priv->gprs_timer, 0, &its, NULL) < 0) {
 		log_ret("timerfd_settime error");
-		close(r2h_gprs->r2h_gprs_timer);
+		close(gprs_priv->gprs_timer);
 		return -1;
 	}
 
@@ -169,12 +169,12 @@ int r2h_gprs_timer_init(r2h_gprs_t *r2h_gprs)
 int r2h_gprs_timer_trigger(r2h_connect_t *C)
 {
 	uint64_t num_exp;
-	if (read(C->r2h_gprs.r2h_gprs_timer, &num_exp, sizeof(uint64_t)) != sizeof(uint64_t)) {
+	if (read(C->gprs_priv.gprs_timer, &num_exp, sizeof(uint64_t)) != sizeof(uint64_t)) {
 		log_ret("work_status_timer_trigger read()");
 		return -1;
 	}
 
-	if (!C->r2h_gprs.connected && C->conn_type == R2H_NONE) {
+	if (!C->gprs_priv.connected && C->conn_type == R2H_NONE) {
 		_gprs_connect_try(C);
 	}
 
@@ -183,7 +183,7 @@ int r2h_gprs_timer_trigger(r2h_connect_t *C)
 
 int r2h_gprs_init(r2h_connect_t *C, system_param_t *S)
 {
-	int err = _addr_init(&C->r2h_gprs.server_addr, &S->r2h_gprs);
+	int err = _addr_init(&C->gprs_priv.server_addr, &S->cfg_gprs);
 	if (err < 0) {
 		return -1;
 	}
@@ -193,9 +193,9 @@ int r2h_gprs_init(r2h_connect_t *C, system_param_t *S)
 	C->r2h[R2H_GPRS].recv = r2h_gprs_recv;
 	C->r2h[R2H_GPRS].send = r2h_gprs_send;
 
-	C->r2h_gprs.in_progress = false;
+	C->gprs_priv.in_progress = false;
 
 	_gprs_connect_try(C);
-	r2h_gprs_timer_init(&C->r2h_gprs);
+	r2h_gprs_timer_init(&C->gprs_priv);
 	return 0;
 }

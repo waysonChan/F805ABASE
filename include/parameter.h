@@ -148,6 +148,7 @@ typedef struct {
 	rs232_t rs232;
 	rs232_t rs485;
 	eth0_t eth0;
+	cfg_gprs_t cfg_gprs;
 
 	/* 天线配置 */
 	int cur_ant;				/* 读写器当前有效天线 */
