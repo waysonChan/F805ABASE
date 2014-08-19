@@ -50,6 +50,14 @@ typedef struct {
 	r2h_send send;
 } r2h_t;
 
+typedef struct {
+	bool connected;
+	bool in_progress;
+	int tcp_port;
+	int gprs_timer;	
+	struct sockaddr_in server_addr;
+} r2h_gprs_t;
+
 #define R2H_NONE	-1
 #define R2H_TCP		0
 #define R2H_UDP		1
@@ -57,7 +65,8 @@ typedef struct {
 #define R2H_RS485	3
 #define R2H_USB		4
 #define R2H_WIFI	5
-#define R2H_TOTAL	6
+#define R2H_GPRS	6
+#define R2H_TOTAL	7
 struct r2h_connect {
 	bool wifi_transparent_mode;		/* wifi 透传模式 */
 	bool connected;
@@ -67,6 +76,7 @@ struct r2h_connect {
 	r2h_send_t send;
 	int conn_type;
 	int wg_fd;
+	r2h_gprs_t r2h_gprs;
 	struct sockaddr_in udp_client_addr;	/* UDP专用 */
 	r2h_t r2h[R2H_TOTAL];
 };

@@ -9,3 +9,4 @@ obj-y += rs232.o
 obj-y += wiegand.o
 obj-y += r2h_usb.o
 obj-y += r2h_wifi.o
+obj-y += r2h_gprs.o

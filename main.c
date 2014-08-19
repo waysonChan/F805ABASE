@@ -7,6 +7,7 @@
 #include "rf_ctrl.h"
 #include "report_tag.h"
 #include "gpio.h"
+#include "utility.h"
 
 #include <signal.h>
 #include <string.h>

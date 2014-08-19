@@ -85,6 +85,11 @@ typedef struct _eth0 {
 	char mac[MAC_ADDR_LEN+1];
 } eth0_t, *eth0_pt;
 
+typedef struct {
+	int tcp_port;
+	char ip[ETH_ADDR_LEN];
+} cfg_gprs_t;
+
 typedef enum {
 	GPO_IDX_BEEP,
 	GPO_IDX_1,
