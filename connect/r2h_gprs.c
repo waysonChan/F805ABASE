@@ -47,13 +47,15 @@ int gprs_cheek_connection(r2h_connect_t *C)
 	return getpeername(C->r2h[R2H_GPRS].fd, &addr, &addrlen);
 }
 
-static int _addr_init(struct sockaddr_in *paddr, cfg_gprs_t *cfg_gprs)
+static int _addr_init(struct sockaddr_in *paddr, data_center_t *data_center)
 {
 	memset(paddr, 0, sizeof(struct sockaddr_in));
 	paddr->sin_family = AF_INET;
-	paddr->sin_port = htons(cfg_gprs->tcp_port);
+	paddr->sin_port = htons(data_center->tcp_port);
 
-	int err = inet_pton(AF_INET, cfg_gprs->ip, &paddr->sin_addr);
+	log_msg("tcp_port = %d, ip = %s", data_center->tcp_port, data_center->ip);
+
+	int err = inet_pton(AF_INET, data_center->ip, &paddr->sin_addr);
 	if (err <= 0) {
 		log_msg("inet_pton error");
 		return -1;
@@ -183,7 +185,7 @@ int r2h_gprs_timer_trigger(r2h_connect_t *C)
 
 int r2h_gprs_init(r2h_connect_t *C, system_param_t *S)
 {
-	int err = _addr_init(&C->gprs_priv.server_addr, &S->cfg_gprs);
+	int err = _addr_init(&C->gprs_priv.server_addr, &S->data_center);
 	if (err < 0) {
 		return -1;
 	}
@@ -195,7 +197,11 @@ int r2h_gprs_init(r2h_connect_t *C, system_param_t *S)
 
 	C->gprs_priv.in_progress = false;
 
-	_gprs_connect_try(C);
-	r2h_gprs_timer_init(&C->gprs_priv);
+	/* GPRS是否自动上传是由设备类型决定的 */
+	if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
+		_gprs_connect_try(C);
+		r2h_gprs_timer_init(&C->gprs_priv);
+	}
+	
 	return 0;
 }

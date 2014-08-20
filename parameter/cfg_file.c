@@ -928,6 +928,79 @@ out:
 }
 
 /*---------------------------------------------------------------------
+ * data center
+ *--------------------------------------------------------------------*/
+int cfg_get_data_center(data_center_t *data_center)
+{
+	int err = 0;	
+	config_t cfg;
+
+	config_init(&cfg);
+	if (!config_read_file(&cfg, CONFIG_FILE_NAME)) {
+		log_msg("%s:%d - %s", config_error_file(&cfg), 
+			config_error_line(&cfg), config_error_text(&cfg));
+		err = -1;
+		goto out;
+	}
+
+	config_setting_t *s = config_lookup(&cfg, "data_center");
+	if (NULL == s) {
+		log_msg("%s: config_lookup() ERR!", __FUNCTION__);
+		err = -1;
+		goto out;
+	}
+
+	const char *ip;
+	if (!(config_setting_lookup_string(s, "ip", &ip)
+		&& config_setting_lookup_int(s, "tcp_port", &data_center->tcp_port)
+		)) {
+		log_msg("%s: config_setting_lookup_string() ERR!", __FUNCTION__);
+		err = -1;
+		goto out;
+	}
+
+	strncpy(data_center->ip, ip, ETH_ADDR_LEN);
+
+out:
+	config_destroy(&cfg);
+	return err;
+}
+
+int cfg_set_data_center(data_center_t *data_center)
+{
+	int err = 0;
+	config_t cfg;
+
+	config_init(&cfg);
+	if (!config_read_file(&cfg, CONFIG_FILE_NAME)) {
+		log_msg("%s:%d - %s", config_error_file(&cfg), 
+			config_error_line(&cfg), config_error_text(&cfg));
+		err = -1;
+		goto out;
+	}
+
+	config_setting_t *s = config_lookup(&cfg, "data_center.ip");
+	if (s) {
+		config_setting_set_string(s, data_center->ip);
+	}
+
+	s = config_lookup(&cfg, "data_center.tcp_port");
+	if (s) {
+		config_setting_set_int(s, data_center->tcp_port);
+	}
+
+	if (!(config_write_file(&cfg, CONFIG_FILE_NAME))) {
+		log_msg("%s: config_write_file() ERR!", __FUNCTION__);
+		err = -1;
+		goto out;
+	}
+
+out:
+	config_destroy(&cfg);
+	return err;
+}
+
+/*---------------------------------------------------------------------
  * frequency table
  *--------------------------------------------------------------------*/
 int cfg_get_freq_table(uint8_t *freq_table, int len)

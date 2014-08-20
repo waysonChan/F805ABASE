@@ -88,7 +88,7 @@ typedef struct _eth0 {
 typedef struct {
 	int tcp_port;
 	char ip[ETH_ADDR_LEN];
-} cfg_gprs_t;
+} data_center_t;
 
 typedef enum {
 	GPO_IDX_BEEP,
@@ -187,6 +187,8 @@ int cfg_get_filter_time(uint8_t *filter_time);
 int cfg_set_filter_time(uint8_t filter_time);
 int cfg_get_eth0(eth0_pt eth0);
 int cfg_set_eth0(eth0_pt eth0, cfg_eth0_e type);
+int cfg_get_data_center(data_center_t *data_center);
+int cfg_set_data_center(data_center_t *data_center);
 int cfg_get_freq_table(uint8_t *freq_table, int len);
 int cfg_set_freq_table(uint8_t *freq_table, int len);
 

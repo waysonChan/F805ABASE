@@ -257,6 +257,9 @@ system_param_t *sys_param_new(void)
 	sp_get_ip_config(S, eth0);
 	ether_set_ip_config(eth0);
 
+	/* data center */
+	cfg_get_data_center(&S->data_center);
+
 	/*
 	 * 天线端口参数初始化
 	 * 注意: S->cur_ant 必须指向实际的天线,否则set_next_active_antenna会报错

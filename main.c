@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
 		int r2h_fd = C->r2h[C->conn_type].fd;
 		fd_set readset, writeset;
 		FD_ZERO(&readset);
+		FD_ZERO(&writeset);
 
 		maxfd = A->fd;
 		FD_SET(A->fd, &readset);
@@ -48,6 +49,9 @@ int main(int argc, char *argv[])
 
 		maxfd = MAX(maxfd, S->work_status_timer);
 		FD_SET(S->work_status_timer, &readset);
+
+		maxfd = MAX(maxfd, C->gprs_priv.gprs_timer);
+		FD_SET(C->gprs_priv.gprs_timer, &readset);
 
 		for (i = 0; i < GPO_NUMBER; i++) {
 			if (S->gpo[i].pulse_timer > maxfd) {
@@ -119,6 +123,10 @@ int main(int argc, char *argv[])
 			work_status_timer_trigger(C, S);
 		}
 
+		if (FD_ISSET(C->gprs_priv.gprs_timer, &readset)) {
+			r2h_gprs_timer_trigger(C);
+		}
+
 		for (i = 0; i < GPO_NUMBER; i++) {
 			if (FD_ISSET(S->gpo[i].pulse_timer, &readset)) {
 				gpo_pulse_timer_trigger(i, S->gpo[i].pulse_timer);
@@ -138,7 +146,7 @@ int main(int argc, char *argv[])
 				continue;
 			}
 			for (i = 0; i < R2H_TOTAL; i++) {
-				if (FD_ISSET(C->r2h[i].fd, &readset)) {
+				if (C->r2h[i].fd != -1 && FD_ISSET(C->r2h[i].fd, &readset)) {
 					ret = r2h_connect_check_in(C, i);
 					if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
 						command_execute(C, S, A);
