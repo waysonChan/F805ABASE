@@ -26,14 +26,17 @@ typedef struct {
 	size_t wlen;	
 } ap_send_t;
 
-typedef struct {
+typedef struct _tag_t tag_t;
+struct _tag_t{
+	tag_t *prev;
+	tag_t *next;
 	uint8_t ant_index;		/* 最后一次读到的天线ID */
-	struct timeval first_time;	/* 第1次读卡时间 */
-	struct timeval last_time;	/* 最后1次读卡时间 */
+	time_t first_time;		/* 第1次读卡时间 */
+	time_t last_time;		/* 最后1次读卡时间 */
 	uint16_t cnt;			/* 读到的次数 */
 	uint16_t tag_len;		/* 标签长度 */
 	uint8_t data[MAX_TAG_EPC_LEN];	/* EPC码 */
-} tag_t;
+};
 
 typedef struct {
 	uint8_t filter_enable;
@@ -43,8 +46,9 @@ typedef struct {
 	uint32_t tag_total;		/* 标签数量 */
 	int filter_timer;		/* 过滤描述符 */
 	struct itimerspec filter_its;	/* 过滤定时器 */
-	struct timeval start_time;	/* 开始读卡时间 */
-	tag_t tag_array[MAX_TAG_NUM];
+	struct timeval start_time;	/* 开始读卡时间 */	
+	tag_t *head_tag;
+	tag_t *tail_tag;
 } tag_report_t;
 
 typedef struct {

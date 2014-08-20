@@ -9,45 +9,74 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
+#include <stdlib.h>
 
-static int _report_tag_insert(tag_t *ptag, tag_report_t *tag_report)
+static tag_t tail_tag_sentinel;
+static tag_t head_tag_sentinel = {
+	.prev = NULL,
+	.next = &tail_tag_sentinel,
+};
+
+static tag_t tail_tag_sentinel = {
+	.prev = &head_tag_sentinel,
+	.next = NULL,
+};
+
+static void _list_insert(tag_t *p, tag_report_t *tag_report)
 {
-	int i;
+	tag_t *head = tag_report->head_tag;
+	p->next = head->next;
+	head->next->prev = p;
+	head->next = p;
+	p->prev = head;
+}
+
+static tag_t *_list_new(tag_t *p)
+{
+	/* 1.分配内存 */
+	tag_t *new_tag = malloc(sizeof(tag_t));
+
+	/* 2.填充数据 */
+	time(&new_tag->first_time);
+	new_tag->cnt = 1;
+	new_tag->tag_len = p->tag_len;
+	new_tag->ant_index = p->ant_index;
+	memcpy(new_tag->data, p->data, p->tag_len);
+
+	return new_tag;
+}
+
+static void _list_delete(tag_t *p)
+{
+	p->prev->next = p->next;
+	p->next->prev = p->prev;
+
+	/* 释放内存 */
+	free(p);
+}
+
+static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
+{
 	bool exist = false;
+	tag_t *p;
+	tag_t *head = tag_report->head_tag;
+	tag_t *tail = tag_report->tail_tag;
 
-	if (tag_report->tag_cnt >= MAX_TAG_NUM) {
-		log_msg("tag report buffer overflow");
-		return -1;
-	}
-
-	tag_t *tag_arr = tag_report->tag_array;
-	for (i = 0; i < tag_report->tag_cnt; i++) {
-		if (ptag->tag_len == tag_arr[i].tag_len && 
-			!memcmp(ptag->data, tag_arr[i].data, ptag->tag_len)) {
-			tag_arr[i].cnt++;
-			gettimeofday(&tag_arr[i].last_time, NULL);
+	for (p = head->next; p != tail; p = p->next) {
+		if (ptag->tag_len == p->tag_len
+			&& !memcmp(p->data, ptag->data, ptag->tag_len)) {
+			p->cnt++;
+			time(&p->last_time);
 			exist = true;
 			break;
 		}
 	}
 
 	if (false == exist) {
-		uint32_t index = tag_report->tag_cnt;
-		gettimeofday(&tag_arr[index].first_time, NULL);
-		tag_arr[index].last_time = tag_arr[index].first_time;
-		tag_arr[index].cnt = 1;
-		memcpy(tag_arr[index].data, ptag->data, ptag->tag_len);
-#if 0
-		for (i = 0; i < ptag->tag_len; i++)
-			printf("%02X ", tag_arr[index].data[i]);
-		printf("\n");
-#endif
-		tag_arr[index].tag_len = ptag->tag_len;
-		tag_arr[index].ant_index = ptag->ant_index;
-		tag_report->tag_cnt++;
+		tag_t *new_tag = _list_new(ptag);
+		_list_insert(new_tag, tag_report);
 	}
 
-	tag_report->tag_total++;
 	return 0;
 }
 
@@ -74,13 +103,7 @@ static int _add_tag_time(r2h_connect_t *C, tag_t *ptag)
 
 	memcpy(ptag->data + ptag->tag_len, time_buf, 7);
 	ptag->tag_len += 7;
-#if 0
-	int i;
-	for (i = 0; i < ptag->tag_len; i++) {
-		printf("%02X ", ptag->data[i]);
-	}
-	printf("\n");
-#endif
+
 	return 0;
 }
 
@@ -150,7 +173,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 			C->conn_type = R2H_NONE;
 			break;
 		case UPLOAD_MODE_WIEGAND:
-			_report_tag_insert(ptag, &A->tag_report);
+			_tag_list_insert(ptag, &A->tag_report);
 			break;
 		default:
 			log_msg("report_tag_send: invalid upload_mode");
@@ -161,7 +184,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	}
 
 	if (A->tag_report.filter_enable) {
-		return _report_tag_insert(ptag, &A->tag_report);
+		return _tag_list_insert(ptag, &A->tag_report);
 	}
 
 	return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
@@ -175,31 +198,27 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return -1;
 	}
 
-	int i;
+	tag_t *p;
 	tag_report_t *tag_report = &A->tag_report;
-	for (i = 0; i < tag_report->tag_cnt; i++) {
-		tag_t *ptag = &tag_report->tag_array[i];
+	tag_t *head = tag_report->head_tag;
+	tag_t *tail = tag_report->tail_tag;
+
+	for (p = head->next; p != tail; ) {
 		if (S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
-			uint8_t *ptr = ptag->data;
-			if (S->pre_cfg.wg_start + S->pre_cfg.wg_len > ptag->tag_len) {
+			uint8_t *ptr = p->data;
+			if (S->pre_cfg.wg_start + S->pre_cfg.wg_len > p->tag_len) {
 				log_msg("invalid tag_len");
 				continue;
 			}
 
-			if (i != 0) {
+			if (p != head->next) {
 				usleep(15000);	/* 发送间隔时间 */
 			}
-						
+
 			if (S->pre_cfg.wg_len == WG_LEN_34) {
 				wiegand_send(C, ptr+S->pre_cfg.wg_start, 4);
 			} else {
 				wiegand_send(C, ptr+S->pre_cfg.wg_start, 3);
-#if 0
-				int j;
-				for (j = 0; j < 3; j++)
-					printf("%02X ", ptr[j]);
-				printf("\n");
-#endif
 			}
 		} else if (A->tag_report.filter_enable) {
 			uint8_t cmd_id;
@@ -207,9 +226,12 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				log_msg("report_tag_send: invalid cmd_id");
 				return -1;
 			}
-			
-			command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+
+			command_answer(C, cmd_id, CMD_EXE_SUCCESS, p, p->tag_len);
 		}
+
+		p = p->next;
+		_list_delete(p->prev);
 	}
 
 	tag_report->tag_cnt = 0;
@@ -238,6 +260,9 @@ int report_tag_set_timer(ap_connect_t *A, uint32_t ms)
 
 int report_tag_init(tag_report_t *tag_report)
 {
+	tag_report->head_tag = &head_tag_sentinel;
+	tag_report->tail_tag = &tail_tag_sentinel;
+
 	tag_report->filter_timer = timerfd_create(CLOCK_REALTIME, 0);
 	if (tag_report->filter_timer < 0) {		
 		log_ret("timerfd_create error");
@@ -257,6 +282,15 @@ int report_tag_init(tag_report_t *tag_report)
 
 int report_tag_reset(tag_report_t *tag_report)
 {
+	tag_t *p;
+	tag_t *head = tag_report->head_tag;
+	tag_t *tail = tag_report->tail_tag;
+
+	for (p = head->next; p != tail; ) {
+		p = p->next;
+		_list_delete(p->prev);		
+	}
+	
 	tag_report->tag_total = 0;
 	tag_report->tag_cnt = 0;
 	return 0;
