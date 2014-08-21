@@ -88,9 +88,11 @@ int r2h_frame_parse(r2h_connect_t *C, int result)
 		C->recv.rlen = result;
 	} else if (result == 0) {
 		/* EOF */
+		log_msg("recv EOF, close client.");
 		r2h_connect_close_client(C);
 		goto out;
 	} else if (result == -1) {
+		log_msg("recv error, close client.");
 		r2h_connect_close_client(C);
 		goto out;
 	} else {

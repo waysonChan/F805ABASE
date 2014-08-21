@@ -30,9 +30,10 @@ int r2h_connect_close_client(r2h_connect_t *C)
 	C->send.wlen = 0;
 
 	if (C->conn_type != R2H_NONE) {
-		return C->r2h[C->conn_type].close_client(C);
+		C->r2h[C->conn_type].close_client(C);
 	}
 
+	C->conn_type = R2H_NONE;
 	return 0;
 }
 

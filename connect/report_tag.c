@@ -94,7 +94,7 @@ static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
 	return 0;
 }
 
-static int _append_tag_time(r2h_connect_t *C, tag_t *ptag)
+static int _append_tag_time(tag_t *ptag)
 {
 	struct tm *ptm;
 	uint8_t time_buf[7];
@@ -161,7 +161,7 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 	/* 2.已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
-			_append_tag_time(C, ptag);
+			_append_tag_time(ptag);
 		}
 		return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 	}
@@ -178,11 +178,11 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 			C->conn_type = R2H_RS485;
 			break;
 		case UPLOAD_MODE_WIFI:
-			_append_tag_time(C, ptag);
+			_append_tag_time(ptag);
 			C->conn_type = R2H_WIFI;
 			break;
 		case UPLOAD_MODE_GPRS:
-			_append_tag_time(C, ptag);
+			_append_tag_time(ptag);
 			C->conn_type = R2H_GPRS;
 			break;
 		default:
@@ -223,6 +223,23 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	return _finally_tag_send(C, S, A, ptag);
 }
 
+static int _tag_storage_write_all(tag_report_t *tag_report)
+{
+	tag_t *p;
+	tag_t *head = tag_report->head_tag;
+	tag_t *tail = tag_report->tail_tag;
+
+	for (p = head->next; p != tail; ) {
+		_append_tag_time(p);
+		tag_storage_write(p);
+		p = p->next;
+		_list_delete(p->prev);
+	}
+
+	return tag_storage_fflush();
+}
+
+#define MAX_SEND_FAIL_TIMES	3
 int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	tag_t *p;
@@ -234,11 +251,11 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	/* 1.处理链表tag */
 	if (head->next != tail) {
 		p = head->next;
-		if (gprs_priv->gprs_wait_flag && (gprs_priv->gprs_fail_cnt++ >= 3)) {
+		if (gprs_priv->gprs_wait_flag && (gprs_priv->gprs_fail_cnt++ >= MAX_SEND_FAIL_TIMES)) {
 			/* 将链表中tag写入文件 */
 			gprs_priv->gprs_fail_cnt = 0;
 			gprs_priv->gprs_wait_flag = false;
-			return tag_storage_write(p);
+			return _tag_storage_write_all(tag_report);
 		} else {
 			/* 发送链表头的tag */
 			gprs_priv->gprs_wait_flag = true;
@@ -246,7 +263,7 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			return _finally_tag_send(C, S, A, p);
 		}
 	} else {		
-#if 0
+#if 1
 		/* 2.处理文件tag */
 		tag_t tag;
 		if (tag_storage_read(&tag) < 0) {

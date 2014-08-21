@@ -15,6 +15,7 @@ int report_tag_init(tag_report_t *tag_report);
 int report_tag_reset(tag_report_t *tag_report);
 
 int tag_storage_write(tag_t *ptag);
+int tag_storage_fflush(void);
 int tag_storage_read(tag_t *ptag);
 int tag_storage_delete(void);
 int tag_storage_init(void);
