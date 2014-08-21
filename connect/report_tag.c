@@ -127,32 +127,49 @@ static inline int _get_cmd_id(int work_status, uint8_t *cmd_id)
 		*cmd_id = COMMAND_18K6C_MAN_READ_USERBANK;
 		break;
 	default:
+		log_msg("_get_cmd_id: invalid work_status.");
 		return -1;
 	}
 
 	return 0;
 }
 
+/*
+ * 注意: 当连接方式为 GPRS 或 WIFI 时，由于无法区分指令模式和自动工作模式，故在这两种模式发送 tag 时，
+ *       始终在标签数据后加上了时间
+ */
 int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag)
 {
+	/* 1.获取 cmd_id */
 	uint8_t cmd_id;
 	if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
 		log_msg("report_tag_send: invalid cmd_id");
 		return -1;
 	}
 
+	/* 2.I802S只能用1号天线读卡 */
 	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
 		|| ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4)) {
-		if (ptag->ant_index == 1) {
-			ptag->ant_index = 4;
-		} else if (ptag->ant_index == 4) {
-			ptag->ant_index = 1;
-		}
+		ptag->ant_index = 1;
 	}
+
+	/* 3.GPRS 或 WIFI 需先加上时间 */
+	if () {
+		if (_add_tag_time(C, ptag) < 0)
+			return -1;
+	}
+
+	/* 4.处理 filter_enable */
+	if (A->tag_report.filter_enable)
+		return _tag_list_insert(ptag, &A->tag_report);
 	
-	if (((S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) && (C->conn_type == R2H_NONE))
-		|| ((S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) && (C->conn_type == R2H_WIFI))
-		) {
+	if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
+		_add_tag_time(C, ptag);
+		_tag_list_insert(ptag, &A->tag_report);
+		return 0;
+	}
+
+	if ((S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) && (C->conn_type == R2H_NONE)) {
 		switch (S->pre_cfg.upload_mode) {
 		case UPLOAD_MODE_NONE:
 			break;
@@ -175,16 +192,18 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 		case UPLOAD_MODE_WIEGAND:
 			_tag_list_insert(ptag, &A->tag_report);
 			break;
+		case UPLOAD_MODE_GPRS:			
+			C->conn_type = R2H_GPRS;
+			_add_tag_time(C, ptag);
+			command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+			C->conn_type = R2H_NONE;
+			break;
 		default:
 			log_msg("report_tag_send: invalid upload_mode");
 			return -1;
 		}
 
 		return 0;
-	}
-
-	if (A->tag_report.filter_enable) {
-		return _tag_list_insert(ptag, &A->tag_report);
 	}
 
 	return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);

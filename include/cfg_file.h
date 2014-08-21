@@ -117,6 +117,7 @@ typedef struct {
 #define UPLOAD_MODE_RS485	0x02
 #define UPLOAD_MODE_WIEGAND	0x03
 #define UPLOAD_MODE_WIFI	0x04
+#define UPLOAD_MODE_GPRS	0x05
 
 #define OPERATE_READ_EPC	0x91
 #define OPERATE_READ_TID	0x92

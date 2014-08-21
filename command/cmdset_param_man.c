@@ -152,8 +152,9 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			if (im_val == UPLOAD_MODE_NONE
 				|| im_val == UPLOAD_MODE_RS232
 				|| im_val == UPLOAD_MODE_RS485
+				|| im_val == UPLOAD_MODE_WIEGAND
 				|| im_val == UPLOAD_MODE_WIFI
-				|| im_val == UPLOAD_MODE_WIEGAND) {
+				|| im_val == UPLOAD_MODE_GPRS) {
 				S->pre_cfg.upload_mode = im_val;
 				cfg_set_pre_cfg(&S->pre_cfg);
 			} else {
