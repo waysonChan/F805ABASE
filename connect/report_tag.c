@@ -80,7 +80,7 @@ static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
 	return 0;
 }
 
-static int _add_tag_time(r2h_connect_t *C, tag_t *ptag)
+static int _append_tag_time(r2h_connect_t *C, tag_t *ptag)
 {
 	struct tm *ptm;
 	uint8_t time_buf[7];
@@ -141,7 +141,7 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 	/* 2.已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
-			_add_tag_time(C, ptag);
+			_append_tag_time(C, ptag);
 		}
 		return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 	}
@@ -158,11 +158,11 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 			C->conn_type = R2H_RS485;
 			break;
 		case UPLOAD_MODE_WIFI:
-			_add_tag_time(C, ptag);
+			_append_tag_time(C, ptag);
 			C->conn_type = R2H_WIFI;
 			break;
 		case UPLOAD_MODE_GPRS:
-			_add_tag_time(C, ptag);
+			_append_tag_time(C, ptag);
 			C->conn_type = R2H_GPRS;
 			break;
 		default:
@@ -203,6 +203,43 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	return _finally_tag_send(C, S, A, ptag);
 }
 
+static int _gprs_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	tag_t *p;
+	tag_report_t *tag_report = &A->tag_report;
+	tag_t *head = tag_report->head_tag;
+	tag_t *tail = tag_report->tail_tag;
+	gprs_priv_t *gprs_priv = &C->gprs_priv;
+
+	/* 1.处理链表tag */
+	if (head->next != tail) {
+		p = head->next;
+		if (gprs_priv->gprs_wait_flag && (gprs_priv->gprs_fail_cnt++ >= 3)) {
+			/* 将链表中tag写入文件 */
+			gprs_priv->gprs_fail_cnt = 0;
+			gprs_priv->gprs_wait_flag = false;
+			return tag_storage_write(p);
+		} else {
+			/* 发送链表头的tag */
+			gprs_priv->gprs_wait_flag = true;
+			gprs_priv->gprs_send_type = GPRS_SEND_TYPE_RAM;
+			return _finally_tag_send(C, S, A, p);
+		}
+	} else {
+		/* 2.处理文件tag */
+		tag_t tag;
+		if (tag_storage_read(&tag) < 0) {
+			return -1;
+		} else {
+			gprs_priv->gprs_wait_flag = true;
+			gprs_priv->gprs_send_type = GPRS_SEND_TYPE_NAND;
+			return _finally_tag_send(C, S, A, &tag);
+		}
+	}
+
+	return 0;
+}
+
 int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	uint64_t num_exp;
@@ -211,13 +248,21 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return -1;
 	}
 
+	if (C->conn_type == R2H_GPRS 
+		|| (C->conn_type == R2H_NONE 
+		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
+		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS)) {
+		_gprs_tag_send_timer(C, S, A);
+	}
+
 	tag_t *p;
 	tag_report_t *tag_report = &A->tag_report;
 	tag_t *head = tag_report->head_tag;
 	tag_t *tail = tag_report->tail_tag;
 
 	for (p = head->next; p != tail; ) {
-		if (S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
+		if (C->conn_type == R2H_NONE && S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
+			&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
 			uint8_t *ptr = p->data;
 			if (S->pre_cfg.wg_start + S->pre_cfg.wg_len > p->tag_len) {
 				log_msg("invalid tag_len");

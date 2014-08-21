@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if (C->gprs_priv.in_progress) {
+		if (C->gprs_priv.connect_in_progress) {
 			maxfd = MAX(maxfd, C->r2h[R2H_GPRS].fd);
 			FD_SET(C->r2h[R2H_GPRS].fd, &writeset);
 		}
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (C->gprs_priv.in_progress && FD_ISSET(C->r2h[R2H_GPRS].fd, &writeset)) {
+		if (C->gprs_priv.connect_in_progress && FD_ISSET(C->r2h[R2H_GPRS].fd, &writeset)) {
 			int optval;
 			socklen_t optlen = sizeof(optval);
 
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 				log_msg("main: tcp upload connect successfully");
 			}
 
-			C->gprs_priv.in_progress = false;
+			C->gprs_priv.connect_in_progress = false;
 		}
 
 		if (FD_ISSET(A->fd, &readset)) {

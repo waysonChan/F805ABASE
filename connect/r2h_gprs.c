@@ -112,7 +112,7 @@ static int _gprs_connect_try(r2h_connect_t *C)
 		sizeof(struct sockaddr_in)) < 0) {
 		if (errno == EINPROGRESS) {
 			/* nonblocking and the connection cannot be completed immediately */
-			C->gprs_priv.in_progress = true;
+			C->gprs_priv.connect_in_progress = true;
 			return 0;
 		}
 		
@@ -195,7 +195,9 @@ int r2h_gprs_init(r2h_connect_t *C, system_param_t *S)
 	C->r2h[R2H_GPRS].recv = r2h_gprs_recv;
 	C->r2h[R2H_GPRS].send = r2h_gprs_send;
 
-	C->gprs_priv.in_progress = false;
+	C->gprs_priv.connect_in_progress = false;
+	C->gprs_priv.gprs_fail_cnt = 0;
+	C->gprs_priv.gprs_wait_flag = false;
 
 	/* GPRS是否自动上传是由设备类型决定的 */
 	if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {

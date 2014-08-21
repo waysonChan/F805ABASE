@@ -50,12 +50,18 @@ typedef struct {
 	r2h_send send;
 } r2h_t;
 
+#define GPRS_SEND_TYPE_RAM	1
+#define GPRS_SEND_TYPE_NAND	2
+
 typedef struct {
 	bool connected;
-	bool in_progress;
+	bool connect_in_progress;
 	int tcp_port;
 	int gprs_timer;	
 	struct sockaddr_in server_addr;
+	bool gprs_wait_flag;	/* 等待上位机确认接收标签指令 */
+	int gprs_fail_cnt;	/* 连续发送标签失败次数 */
+	int gprs_send_type;	/* 发送的标签在 RAM 还是 NAND */
 } gprs_priv_t;
 
 #define R2H_NONE	-1
