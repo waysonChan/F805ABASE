@@ -20,6 +20,11 @@ typedef struct {
 
 int tag_storage_write(tag_t *ptag)
 {
+	if (tag_storage_total >= TS_TAG_MAX_NUM) {
+		log_msg("tag_storage_write: tag_storage_total >= TS_TAG_MAX_NUM");
+		return -1;
+	}
+	
 	tag_storage_t ts = {
 		.ant_idx = ptag->ant_index,
 		.tag_len = ptag->tag_len,

@@ -239,7 +239,7 @@ static int _tag_storage_write_all(tag_report_t *tag_report)
 	return tag_storage_fflush();
 }
 
-#define MAX_SEND_FAIL_TIMES	3
+#define MAX_SEND_FAIL_TIMES	5
 int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	tag_t *p;
@@ -269,6 +269,8 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		if (tag_storage_read(&tag) < 0) {
 			return -1;
 		} else {
+			tag.has_append_time = true;	/* Биаш */
+			//log_msg("tag_len = %d", tag.tag_len);
 			gprs_priv->gprs_wait_flag = true;
 			gprs_priv->gprs_send_type = GPRS_SEND_TYPE_NAND;
 			return _finally_tag_send(C, S, A, &tag);
