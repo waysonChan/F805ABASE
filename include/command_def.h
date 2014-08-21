@@ -16,7 +16,7 @@
 #define COMMAND_INTERGRATION_APPLY_BASE			0xA0	/* 集成应用指令集 */
 #define COMMAND_TIME_MAN_BASE				0xB0	/* 时间操作指令集 */
 #define COMMAND_EXTEND_BOARD_BASE			0xC0	/* 扩展板操作指令集 */
-#define COMMAND_RESERVED_BASE				0xD0	/* 保留部分 */
+#define COMMAND_DATA_CENTER_BASE			0xD0	/* 保留部分 */
 
 /*---------------------------------------------------------------------
  *	系统控制指令集，子类型定义
@@ -114,5 +114,10 @@
 #define COMMAND_WIFI_CONFIG				0xC2	/* WIFI 配置 */
 #define COMMAND_WIFI_QUERY				0xC3	/* WIFI 查询 */
 #define COMMAND_WIFI_TRANS_RESET			0xC4	/* WIFI 进入透传或复位 */
+
+/*---------------------------------------------------------------------
+ *	数据中心
+ *--------------------------------------------------------------------*/
+#define COMMAND_RECV_TAG_CONFIRM			0xD0	/* 接收标签确认指令 */
 
 #endif	/* _COMMAND_DEF_H */

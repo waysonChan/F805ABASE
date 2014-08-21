@@ -30,7 +30,7 @@ int tag_storage_write(tag_t *ptag)
 	/* 1.写标签数据 */
 	fseek(fp, TS_HEADER_LEN + tag_storage_total*sizeof(tag_storage_t), SEEK_SET);
 	size_t sz = fwrite(&ts, sizeof(ts), 1, fp);
-	if (sz != sizeof(ts)) {
+	if (sz != 1) {
 		log_msg("fwrite error");
 		return -1;
 	} else {
@@ -38,7 +38,7 @@ int tag_storage_write(tag_t *ptag)
 		tag_storage_total++;
 		fseek(fp, 0, SEEK_SET);
 		sz = fwrite(&tag_storage_total, sizeof(tag_storage_total), 1, fp);
-		if (sz != sizeof(tag_storage_total)) {
+		if (sz != 1) {
 			log_msg("fwrite error");
 			tag_storage_total--; /* 更新标签数失败,恢复标签数 */
 			return -1;
@@ -57,7 +57,7 @@ int tag_storage_read(tag_t *ptag)
 
 	tag_storage_t ts;
 	size_t sz = fread(&ts, sizeof(ts), 1, fp);
-	if (sz != sizeof(ts)) {
+	if (sz != 1) {
 		log_msg("fread error");
 		return -1;
 	}
@@ -80,7 +80,7 @@ int tag_storage_delete(void)
 	/* 1.更新标签数 */
 	fseek(fp, 0, SEEK_SET);
 	sz = fwrite(&tag_storage_total, sizeof(tag_storage_total), 1, fp);
-	if (sz != sizeof(tag_storage_total)) {
+	if (sz != 1) {
 		log_msg("fwrite error");
 		tag_storage_total++;	/* 更新标签数失败,恢复标签数 */
 		return -1;
@@ -92,11 +92,10 @@ int tag_storage_delete(void)
 int tag_storage_init(void)
 {
 	size_t sz;
-
 	fp = fopen("tagdata.bin", "r+");
 	if (fp) {
 		sz = fread(&tag_storage_total, sizeof(tag_storage_total), 1, fp);
-		if (sz != sizeof(tag_storage_total)) {
+		if (sz != 1) {
 			log_msg("fread error");
 			return -1;
 		}
@@ -108,16 +107,16 @@ int tag_storage_init(void)
 			return -1;
 		}
 
+		sz = fwrite(&tag_storage_total, sizeof(tag_storage_total), 1, fp);
+		if (sz != 1) {
+			log_ret("frwite error, <sz = %d>", sz);
+			return -1;
+		}
+
 		fclose(fp);
 		fp = fopen("tagdata.bin", "r+");
 		if (fp == NULL) {
 			log_sys("fopen error r+");
-			return -1;
-		}
-
-		sz = fwrite(&tag_storage_total, sizeof(tag_storage_total), 1, fp);
-		if (sz != sizeof(tag_storage_total)) {
-			log_msg("frwite error");
 			return -1;
 		}
 	}

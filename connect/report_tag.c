@@ -22,13 +22,13 @@ static tag_t tail_tag_sentinel = {
 	.next = NULL,
 };
 
-static void _list_insert(tag_t *p, tag_report_t *tag_report)
+static void _list_add_tail(tag_t *p, tag_report_t *tag_report)
 {
-	tag_t *head = tag_report->head_tag;
-	p->next = head->next;
-	head->next->prev = p;
-	head->next = p;
-	p->prev = head;
+	tag_t *tail = tag_report->tail_tag;
+	p->next = tail;
+	p->prev = tail->prev;
+	tail->prev->next = p;
+	tail->prev = p;
 }
 
 static tag_t *_list_new(tag_t *p)
@@ -43,6 +43,9 @@ static tag_t *_list_new(tag_t *p)
 	new_tag->ant_index = p->ant_index;
 	memcpy(new_tag->data, p->data, p->tag_len);
 
+	/* 3.防止多次追加时间 */
+	new_tag->has_append_time = false;
+
 	return new_tag;
 }
 
@@ -53,6 +56,17 @@ static void _list_delete(tag_t *p)
 
 	/* 释放内存 */
 	free(p);
+}
+
+void list_delete_header(void)
+{
+	if (head_tag_sentinel.next == &tail_tag_sentinel) {
+		log_msg("list_delete_header: list empty");
+		return;
+	} else {
+		tag_t *p = head_tag_sentinel.next;
+		_list_delete(p);
+	}
 }
 
 static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
@@ -74,7 +88,7 @@ static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
 
 	if (false == exist) {
 		tag_t *new_tag = _list_new(ptag);
-		_list_insert(new_tag, tag_report);
+		_list_add_tail(new_tag, tag_report);
 	}
 
 	return 0;
@@ -84,6 +98,12 @@ static int _append_tag_time(r2h_connect_t *C, tag_t *ptag)
 {
 	struct tm *ptm;
 	uint8_t time_buf[7];
+
+	if (ptag->has_append_time) {
+		return 0;
+	} else {
+		ptag->has_append_time = true;
+	}
 
 	ptm = localtime(&ptag->first_time);
 	time_buf[0] = convert_hex(ptm->tm_sec);		/* 秒 */
@@ -203,7 +223,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	return _finally_tag_send(C, S, A, ptag);
 }
 
-static int _gprs_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	tag_t *p;
 	tag_report_t *tag_report = &A->tag_report;
@@ -225,7 +245,8 @@ static int _gprs_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_
 			gprs_priv->gprs_send_type = GPRS_SEND_TYPE_RAM;
 			return _finally_tag_send(C, S, A, p);
 		}
-	} else {
+	} else {		
+#if 0
 		/* 2.处理文件tag */
 		tag_t tag;
 		if (tag_storage_read(&tag) < 0) {
@@ -235,6 +256,7 @@ static int _gprs_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_
 			gprs_priv->gprs_send_type = GPRS_SEND_TYPE_NAND;
 			return _finally_tag_send(C, S, A, &tag);
 		}
+#endif
 	}
 
 	return 0;
@@ -252,7 +274,7 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		|| (C->conn_type == R2H_NONE 
 		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS)) {
-		_gprs_tag_send_timer(C, S, A);
+		return gprs_tag_send_header(C, S, A);
 	}
 
 	tag_t *p;
@@ -328,6 +350,8 @@ int report_tag_init(tag_report_t *tag_report)
 		close(tag_report->filter_timer);
 		return -1;
 	}
+
+	tag_storage_init();
 
 	return 0;
 }

@@ -30,6 +30,7 @@ typedef struct _tag_t tag_t;
 struct _tag_t{
 	tag_t *prev;
 	tag_t *next;
+	bool has_append_time;		/* 防止多次追加时间 */
 	uint8_t ant_index;		/* 最后一次读到的天线ID */
 	time_t first_time;		/* 第1次读卡时间 */
 	time_t last_time;		/* 最后1次读卡时间 */

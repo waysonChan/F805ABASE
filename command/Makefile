@@ -8,3 +8,4 @@ obj-y += cmdset_transmit_control.o
 obj-y += cmdset_time_man.o
 obj-y += cmdset_18k6c_man.o
 obj-y += cmdset_extend_board.o
+obj-y += cmdset_data_center.o

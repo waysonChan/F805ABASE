@@ -99,12 +99,12 @@ int main(int argc, char *argv[])
 			}
 
 			if (optval || gprs_cheek_connection(C)) {
-				log_msg("main: tcp upload connect unsuccessfully");
+				log_msg("main: gprs upload connect unsuccessfully");
 				r2h_gprs_close(C);
 			} else {
 				C->gprs_priv.connected = true;
 				C->conn_type = R2H_GPRS;
-				log_msg("main: tcp upload connect successfully");
+				log_msg("main: gprs upload connect successfully");
 			}
 
 			C->gprs_priv.connect_in_progress = false;

@@ -70,5 +70,6 @@ int command_init(void)
 	err |= trans_control_init();
 	err |= epc_18k6c_init();
 	err |= extend_board_init();
+	err |= data_center_init();
 	return err;
 }

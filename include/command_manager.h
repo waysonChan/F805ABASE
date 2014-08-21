@@ -40,6 +40,7 @@ int time_man_init(void);
 int trans_control_init(void);
 int epc_18k6c_init(void);
 int extend_board_init(void);
+int data_center_init(void);
 
 uint8_t stop_read_tag(system_param_t *S, ap_connect_t *A);
 
