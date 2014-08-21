@@ -135,8 +135,9 @@ static inline int _get_cmd_id(int work_status, uint8_t *cmd_id)
 }
 
 /*
- * 注意: 当连接方式为 GPRS 或 WIFI 时，由于无法区分指令模式和自动工作模式，故在这两种模式发送 tag 时，
+ * 注意: 1. 当连接方式为 GPRS 或 WIFI 时，由于无法区分指令模式和自动工作模式，故在这两种模式发送 tag 时，
  *       始终在标签数据后加上了时间
+ *	2. 过滤模式的时间在标签发送时才加上
  */
 int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag)
 {
@@ -153,60 +154,48 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 		ptag->ant_index = 1;
 	}
 
-	/* 3.GPRS 或 WIFI 需先加上时间 */
-	if () {
-		if (_add_tag_time(C, ptag) < 0)
-			return -1;
-	}
 
-	/* 4.处理 filter_enable */
+	/* 3.(过滤模式)处理 filter_enable */
 	if (A->tag_report.filter_enable)
 		return _tag_list_insert(ptag, &A->tag_report);
-	
-	if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
-		_add_tag_time(C, ptag);
-		_tag_list_insert(ptag, &A->tag_report);
-		return 0;
+
+	/* 4.已建立连接 */
+	if (C->conn_type != R2H_NONE) {
+		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
+			_add_tag_time(C, ptag);
+		}
+		return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 	}
 
-	if ((S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) && (C->conn_type == R2H_NONE)) {
+	/* 5.自动工作模式 */
+	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) {
 		switch (S->pre_cfg.upload_mode) {
-		case UPLOAD_MODE_NONE:
-			break;
+		case UPLOAD_MODE_WIEGAND:
+			return _tag_list_insert(ptag, &A->tag_report);
 		case UPLOAD_MODE_RS232:
 			C->conn_type = R2H_RS232;
-			command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
-			C->conn_type = R2H_NONE;
 			break;
 		case UPLOAD_MODE_RS485:
 			C->conn_type = R2H_RS485;
-			command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
-			C->conn_type = R2H_NONE;
 			break;
 		case UPLOAD_MODE_WIFI:
+			_add_tag_time(C, ptag);
 			C->conn_type = R2H_WIFI;
+			break;
+		case UPLOAD_MODE_GPRS:
 			_add_tag_time(C, ptag);
-			command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
-			C->conn_type = R2H_NONE;
-			break;
-		case UPLOAD_MODE_WIEGAND:
-			_tag_list_insert(ptag, &A->tag_report);
-			break;
-		case UPLOAD_MODE_GPRS:			
 			C->conn_type = R2H_GPRS;
-			_add_tag_time(C, ptag);
-			command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
-			C->conn_type = R2H_NONE;
 			break;
 		default:
 			log_msg("report_tag_send: invalid upload_mode");
 			return -1;
 		}
 
-		return 0;
+		command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+		C->conn_type = R2H_NONE;	/* 必需 */
 	}
 
-	return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+	return 0;
 }
 
 int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
