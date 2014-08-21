@@ -37,7 +37,7 @@ static tag_t *_list_new(tag_t *p)
 	tag_t *new_tag = malloc(sizeof(tag_t));
 
 	/* 2.填充数据 */
-	time(&new_tag->first_time);
+	new_tag->first_time = p->first_time;
 	new_tag->cnt = 1;
 	new_tag->tag_len = p->tag_len;
 	new_tag->ant_index = p->ant_index;
@@ -82,17 +82,10 @@ static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
 
 static int _add_tag_time(r2h_connect_t *C, tag_t *ptag)
 {
-	time_t timet;
 	struct tm *ptm;
 	uint8_t time_buf[7];
 
-	if (time(&timet) < 0) {
-		log_msg("%s: time() ERR!", __FUNCTION__);
-		command_answer(C, COMMAND_READER_TIME_QUERY, ERRCODE_CMD_UNKNOWERR, NULL, 0);
-		return -1;
-	}
-
-	ptm = localtime(&timet);
+	ptm = localtime(&ptag->first_time);
 	time_buf[0] = convert_hex(ptm->tm_sec);		/* 秒 */
 	time_buf[1] = convert_hex(ptm->tm_min);		/* 分 */
 	time_buf[2] = convert_hex(ptm->tm_hour);	/* 时 */
@@ -134,13 +127,10 @@ static inline int _get_cmd_id(int work_status, uint8_t *cmd_id)
 	return 0;
 }
 
-/*
- * 注意: 1. 当连接方式为 GPRS 或 WIFI 时，由于无法区分指令模式和自动工作模式，故在这两种模式发送 tag 时，
- *       始终在标签数据后加上了时间
- *	2. 过滤模式的时间在标签发送时才加上
- */
-int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag)
+static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag)
 {
+	int ret = 0;
+	
 	/* 1.获取 cmd_id */
 	uint8_t cmd_id;
 	if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
@@ -148,18 +138,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 		return -1;
 	}
 
-	/* 2.I802S只能用1号天线读卡 */
-	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
-		|| ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4)) {
-		ptag->ant_index = 1;
-	}
-
-
-	/* 3.(过滤模式)处理 filter_enable */
-	if (A->tag_report.filter_enable)
-		return _tag_list_insert(ptag, &A->tag_report);
-
-	/* 4.已建立连接 */
+	/* 2.已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
 			_add_tag_time(C, ptag);
@@ -167,7 +146,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 		return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 	}
 
-	/* 5.自动工作模式 */
+	/* 3.自动工作模式 */
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) {
 		switch (S->pre_cfg.upload_mode) {
 		case UPLOAD_MODE_WIEGAND:
@@ -187,15 +166,41 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 			C->conn_type = R2H_GPRS;
 			break;
 		default:
-			log_msg("report_tag_send: invalid upload_mode");
+			log_msg("_finally_tag_send: invalid upload_mode");
 			return -1;
 		}
 
-		command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 		C->conn_type = R2H_NONE;	/* 必需 */
 	}
 
-	return 0;
+	return ret;
+}
+
+/*
+ * 注意: 1. 当连接方式为 GPRS 或 WIFI 时，由于无法区分指令模式和自动工作模式，故在这两种模式发送 tag 时，
+ *       始终在标签数据后加上了时间
+ *	2. 过滤模式的时间在标签发送时才加上
+ */
+int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag)
+{
+	/* 1.添加标签时间 */
+	if (time(&ptag->first_time) < 0) {
+		log_msg("report_tag_send: time() error!");
+		return -1;
+	}
+
+	/* 2.I802S只能用1号天线读卡 */
+	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
+		|| ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4)) {
+		ptag->ant_index = 1;
+	}
+
+	/* 3.(过滤模式)处理 filter_enable */
+	if (A->tag_report.filter_enable)
+		return _tag_list_insert(ptag, &A->tag_report);
+
+	return _finally_tag_send(C, S, A, ptag);
 }
 
 int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
@@ -229,13 +234,7 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				wiegand_send(C, ptr+S->pre_cfg.wg_start, 3);
 			}
 		} else if (A->tag_report.filter_enable) {
-			uint8_t cmd_id;
-			if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
-				log_msg("report_tag_send: invalid cmd_id");
-				return -1;
-			}
-
-			command_answer(C, cmd_id, CMD_EXE_SUCCESS, p, p->tag_len);
+			_finally_tag_send(C, S, A, p);
 		}
 
 		p = p->next;
