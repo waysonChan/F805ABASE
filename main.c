@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
 	while (1) {
 		int i, ret, maxfd = 0;
-		int r2h_fd = C->r2h[C->conn_type].fd;
+		int r2h_fd;
 		fd_set readset, writeset;
 		FD_ZERO(&readset);
 		FD_ZERO(&writeset);
@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (C->connected) {
+			r2h_fd = C->r2h[C->conn_type].fd;
 			maxfd = MAX(maxfd, r2h_fd);
 			FD_SET(r2h_fd, &readset);
 		} else {
@@ -134,6 +135,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (C->connected) {
+			r2h_fd = C->r2h[C->conn_type].fd;
 			if (FD_ISSET(r2h_fd, &readset)) {
 				ret = r2h_connect_recv(C, R2H_BUF_SIZE);
 				if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
