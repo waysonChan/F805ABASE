@@ -81,6 +81,33 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				goto out;
 			}
 			break;
+		case 122:	/* dsc apn */
+			if (len > DSC_APN_LEN) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			
+			memcpy(S->data_center.apn, cmd_param+3, len);
+			cfg_set_data_center(&S->data_center);
+			break;
+		case 123:	/* dsc username */
+			if (len > DSC_USERNAME_LEN) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			
+			memcpy(S->data_center.username, cmd_param+3, len);
+			cfg_set_data_center(&S->data_center);
+			break;
+		case 124:	/* dsc passwd */
+			if (len > DSC_PASSWD_LEN) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			
+			memcpy(S->data_center.passwd, cmd_param+3, len);
+			cfg_set_data_center(&S->data_center);
+			break;
 		case 159:	/* serial port speed */
 			S->rs232.baud_rate = im_val;
 			cfg_set_rs232(&S->rs232, CFG_BAUD_RATE);
@@ -215,6 +242,18 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		case 1:		/* device type */
 			ex_val = S->pre_cfg.dev_type;
 			break;
+		case 122:	/* dsc apn */
+			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, CMD_EXE_SUCCESS, 
+				S->data_center.apn, DSC_APN_LEN);
+			return;
+		case 123:	/* dsc username */
+			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, CMD_EXE_SUCCESS, 
+				S->data_center.username, DSC_USERNAME_LEN);
+			return;
+		case 124:	/* dsc passwd */
+			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, CMD_EXE_SUCCESS, 
+				S->data_center.passwd, DSC_PASSWD_LEN);
+			return;
 		case 159:	/* serial port speed */
 			ex_val = S->rs232.baud_rate;
 			break;
@@ -271,6 +310,10 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 	}
 
 out:
+	if (err != CMD_EXE_SUCCESS) {
+		log_msg("ec_param_table_man: invalid parameter.");
+	}
+
 	command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, err, NULL, 0);
 }
 

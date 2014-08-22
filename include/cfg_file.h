@@ -85,9 +85,15 @@ typedef struct _eth0 {
 	char mac[MAC_ADDR_LEN+1];
 } eth0_t, *eth0_pt;
 
+#define DSC_APN_LEN			16
+#define DSC_USERNAME_LEN		16
+#define DSC_PASSWD_LEN			16
 typedef struct {
 	int tcp_port;
 	char ip[ETH_ADDR_LEN];
+	char apn[DSC_APN_LEN];
+	char username[DSC_USERNAME_LEN];
+	char passwd[DSC_PASSWD_LEN];
 } data_center_t;
 
 typedef enum {

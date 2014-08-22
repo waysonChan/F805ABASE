@@ -957,7 +957,13 @@ int cfg_get_data_center(data_center_t *data_center)
 	}
 
 	const char *ip;
+	const char *apn;
+	const char *username;
+	const char *passwd;
 	if (!(config_setting_lookup_string(s, "ip", &ip)
+		&& config_setting_lookup_string(s, "apn", &apn)
+		&& config_setting_lookup_string(s, "username", &username)
+		&& config_setting_lookup_string(s, "passwd", &passwd)
 		&& config_setting_lookup_int(s, "tcp_port", &data_center->tcp_port)
 		)) {
 		log_msg("%s: config_setting_lookup_string() ERR!", __FUNCTION__);
@@ -966,6 +972,9 @@ int cfg_get_data_center(data_center_t *data_center)
 	}
 
 	strncpy(data_center->ip, ip, ETH_ADDR_LEN);
+	strncpy(data_center->apn, apn, DSC_APN_LEN);
+	strncpy(data_center->username, username, DSC_USERNAME_LEN);
+	strncpy(data_center->passwd, passwd, DSC_PASSWD_LEN);
 
 out:
 	config_destroy(&cfg);
@@ -988,6 +997,21 @@ int cfg_set_data_center(data_center_t *data_center)
 	config_setting_t *s = config_lookup(&cfg, "data_center.ip");
 	if (s) {
 		config_setting_set_string(s, data_center->ip);
+	}
+
+	s = config_lookup(&cfg, "data_center.apn");
+	if (s) {
+		config_setting_set_string(s, data_center->apn);
+	}
+
+	s = config_lookup(&cfg, "data_center.username");
+	if (s) {
+		config_setting_set_string(s, data_center->username);
+	}
+
+	s = config_lookup(&cfg, "data_center.passwd");
+	if (s) {
+		config_setting_set_string(s, data_center->passwd);
 	}
 
 	s = config_lookup(&cfg, "data_center.tcp_port");
