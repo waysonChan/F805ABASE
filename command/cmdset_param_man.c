@@ -162,6 +162,16 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				goto out;
 			}
 			break;
+		case 249:	/* flash enable */
+			if (im_val == NAND_FLASH_ENBABLE
+				|| im_val == NAND_FLASH_DISABLE) {
+				S->pre_cfg.flash_enable = im_val;
+				cfg_set_pre_cfg(&S->pre_cfg);
+			} else {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			break;
 		default:
 			err = ERRCODE_CMD_ERRTYPE;
 			goto out;
@@ -208,6 +218,9 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			break;
 		case 241:	/* communication port */
 			ex_val = S->pre_cfg.upload_mode;
+			break;
+		case 249:	/* flash enable */
+			ex_val = S->pre_cfg.flash_enable;
 			break;
 		default:
 			err = ERRCODE_CMD_ERRTYPE;

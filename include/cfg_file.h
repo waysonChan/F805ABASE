@@ -119,6 +119,9 @@ typedef struct {
 #define UPLOAD_MODE_WIFI	0x04
 #define UPLOAD_MODE_GPRS	0x05
 
+#define NAND_FLASH_ENBABLE	0x01
+#define NAND_FLASH_DISABLE	0x02
+
 #define OPERATE_READ_EPC	0x91
 #define OPERATE_READ_TID	0x92
 #define OPERATE_READ_USER	0x94
@@ -156,6 +159,7 @@ typedef struct {
 typedef struct {
 	int ant_idx;		/* 240: 天线端口 */
 	int upload_mode;	/* 241: 处理模式 */
+	int flash_enable;	/* 249: 标签缓存 */
 	int gpo_mode;		/* IO输出 */
 	int oper_mode;		/* 239: 操作模式 */
 

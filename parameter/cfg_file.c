@@ -574,6 +574,7 @@ int cfg_get_pre_cfg(pre_cfg_t *pre_cfg)
 
 	if (!(config_setting_lookup_int(s, "ant_idx", &pre_cfg->ant_idx)
 		&& config_setting_lookup_int(s, "upload_mode", &pre_cfg->upload_mode)
+		&& config_setting_lookup_int(s, "flash_enable", &pre_cfg->flash_enable)
 		&& config_setting_lookup_int(s, "gpo_mode", &pre_cfg->gpo_mode)
 		&& config_setting_lookup_int(s, "oper_mode", &pre_cfg->oper_mode)
 		&& config_setting_lookup_int(s, "work_mode", &pre_cfg->work_mode)
@@ -617,6 +618,11 @@ int cfg_set_pre_cfg(pre_cfg_t *pre_cfg)
 	s = config_lookup(&cfg, "pre_cfg.upload_mode");
 	if (s) {
 		config_setting_set_int(s, pre_cfg->upload_mode);
+	}
+
+	s = config_lookup(&cfg, "pre_cfg.flash_enable");
+	if (s) {
+		config_setting_set_int(s, pre_cfg->flash_enable);
 	}
 
 	s = config_lookup(&cfg, "pre_cfg.gpo_mode");

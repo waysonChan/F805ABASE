@@ -220,6 +220,9 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	if (A->tag_report.filter_enable)
 		return _tag_list_insert(ptag, &A->tag_report);
 
+	/* 4. 为WIFI和GPRS加上时间 */
+	ptag->has_append_time = false;
+
 	return _finally_tag_send(C, S, A, ptag);
 }
 
@@ -262,7 +265,7 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			gprs_priv->gprs_send_type = GPRS_SEND_TYPE_RAM;
 			return _finally_tag_send(C, S, A, p);
 		}
-	} else {		
+	} else {
 #if 1
 		/* 2.处理文件tag */
 		tag_t tag;
@@ -289,10 +292,10 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return -1;
 	}
 
-	if (C->conn_type == R2H_GPRS 
+	if ((S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE) && (C->conn_type == R2H_GPRS 
 		|| (C->conn_type == R2H_NONE 
 		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
-		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS)) {
+		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS))) {
 		return gprs_tag_send_header(C, S, A);
 	}
 
