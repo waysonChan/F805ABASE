@@ -50,8 +50,10 @@ int main(int argc, char *argv[])
 		maxfd = MAX(maxfd, S->work_status_timer);
 		FD_SET(S->work_status_timer, &readset);
 
-		maxfd = MAX(maxfd, C->gprs_priv.gprs_timer);
-		FD_SET(C->gprs_priv.gprs_timer, &readset);
+		if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
+			maxfd = MAX(maxfd, C->gprs_priv.gprs_timer);
+			FD_SET(C->gprs_priv.gprs_timer, &readset);
+		}
 
 		for (i = 0; i < GPO_NUMBER; i++) {
 			if (S->gpo[i].pulse_timer > maxfd) {
@@ -124,7 +126,8 @@ int main(int argc, char *argv[])
 			work_status_timer_trigger(C, S);
 		}
 
-		if (FD_ISSET(C->gprs_priv.gprs_timer, &readset)) {
+		if ((S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS)
+			&& FD_ISSET(C->gprs_priv.gprs_timer, &readset)) {
 			r2h_gprs_timer_trigger(C);
 		}
 

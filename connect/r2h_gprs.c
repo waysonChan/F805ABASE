@@ -172,7 +172,7 @@ int r2h_gprs_timer_trigger(r2h_connect_t *C)
 {
 	uint64_t num_exp;
 	if (read(C->gprs_priv.gprs_timer, &num_exp, sizeof(uint64_t)) != sizeof(uint64_t)) {
-		log_ret("work_status_timer_trigger read()");
+		log_ret("r2h_gprs_timer_trigger read()");
 		return -1;
 	}
 
