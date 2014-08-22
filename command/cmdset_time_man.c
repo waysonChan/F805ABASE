@@ -6,6 +6,7 @@
 #include "errcode.h"
 #include "rf_ctrl.h"
 #include "parameter.h"
+#include "report_tag.h"
 
 #include <string.h>
 #include <errno.h>
@@ -137,6 +138,35 @@ static command_t cmd_time_query = {
 	.execute = ec_time_query,
 };
 
+/*---------------------------------------------------------------------
+ *	指令:查询Flash缓存标签数
+ *--------------------------------------------------------------------*/
+static void ec_get_flash_tag_cnt(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	uint16_t tag_cnt = tag_storage_get_cnt();
+	uint8_t cnt[4] = {0, 0, tag_cnt >> 8, tag_cnt & 0xFF};
+
+	command_answer(C, COMMAND_FLASHDATA_COUNT_QUERY, CMD_EXE_SUCCESS, cnt, sizeof(cnt));
+}
+
+static command_t cmd_get_flash_tag_cnt = {
+	.cmd_id = COMMAND_FLASHDATA_COUNT_QUERY,
+	.execute = ec_get_flash_tag_cnt,
+};
+/*---------------------------------------------------------------------
+ *	指令:清除Flash缓存
+ *--------------------------------------------------------------------*/
+static void ec_clear_flash_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	tag_storage_delete(true);
+	command_answer(C, COMMAND_FLASHDATA_CLEAR, CMD_EXE_SUCCESS, NULL, 0);
+}
+
+static command_t cmd_get_flash_tag = {
+	.cmd_id = COMMAND_FLASHDATA_CLEAR,
+	.execute = ec_clear_flash_tag,
+};
+
 /*
  * 注册指令集和属于此指令集的所有指令
  */
@@ -145,5 +175,7 @@ int time_man_init(void)
 	int err = command_set_register(&cmdset_time_man);
 	err |= command_register(&cmdset_time_man, &cmd_time_config);
 	err |= command_register(&cmdset_time_man, &cmd_time_query);
+	err |= command_register(&cmdset_time_man, &cmd_get_flash_tag_cnt);
+	err |= command_register(&cmdset_time_man, &cmd_get_flash_tag);
 	return err;
 }

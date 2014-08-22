@@ -36,7 +36,7 @@ static void ec_recv_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_
 	if (gprs_priv->gprs_send_type == GPRS_SEND_TYPE_RAM) {
 		list_delete_header();
 	} else {
-		tag_storage_delete();
+		tag_storage_delete(false);
 	}
 
 	gprs_tag_send_header(C, S, A);

@@ -84,31 +84,39 @@ int tag_storage_read(tag_t *ptag)
 	return 0;
 }
 
-int tag_storage_delete(void)
+int tag_storage_delete(bool all)
 {
-	size_t sz = 0;
 	if (tag_storage_total == 0) {
-		log_msg("tag_storage_delete: tag_storage_total == 0");
+		log_msg("tag_storage_delete: tag_storage_total already is 0");
 		return -1;
+	}
+
+	if (all) {
+		tag_storage_total = 0;
 	} else {
 		tag_storage_total--;
 	}
 
 	/* 1.更新标签数 */
 	fseek(fp, 0, SEEK_SET);
-	sz = fwrite(&tag_storage_total, sizeof(tag_storage_total), 1, fp);
+	size_t sz = fwrite(&tag_storage_total, sizeof(tag_storage_total), 1, fp);
 	if (sz != 1) {
 		log_msg("fwrite error");
 		tag_storage_total++;	/* 更新标签数失败,恢复标签数 */
 		return -1;
 	} else {
-		log_msg("tag_storage_delete: tag_storage_total = %d", tag_storage_total);
+		//log_msg("tag_storage_delete: tag_storage_total = %d", tag_storage_total);
 		if (tag_storage_total == 0) {
 			tag_storage_fflush();	/* 这不是很好的策略 */
 		}
 	}
 
 	return 0;
+}
+
+uint16_t tag_storage_get_cnt(void)
+{
+	return tag_storage_total;
 }
 
 int tag_storage_init(void)
