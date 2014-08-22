@@ -147,6 +147,7 @@ int main(int argc, char *argv[])
 			}
 			for (i = 0; i < R2H_TOTAL; i++) {
 				if (C->r2h[i].fd != -1 && FD_ISSET(C->r2h[i].fd, &readset)) {
+					//log_msg("i = %d, fd = %d", i, C->r2h[i].fd);
 					ret = r2h_connect_check_in(C, i);
 					if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
 						command_execute(C, S, A);
