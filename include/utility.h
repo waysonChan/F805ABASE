@@ -14,6 +14,9 @@ inline uint16_t crc_16_buf(const uint8_t *data, uint16_t len);
 inline uint16_t crc_ccitt_byte(uint8_t byte, uint16_t last_crc);
 inline uint16_t crc_ccitt_buf(const uint8_t *data, uint16_t len);
 
+inline uint16_t swap16(uint16_t x);
+inline uint32_t swap32(uint32_t x);
+
 #define MIN(a,b) (((a)>(b))?(b):(a))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 

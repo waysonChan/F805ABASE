@@ -153,6 +153,7 @@ static command_t cmd_get_flash_tag_cnt = {
 	.cmd_id = COMMAND_FLASHDATA_COUNT_QUERY,
 	.execute = ec_get_flash_tag_cnt,
 };
+
 /*---------------------------------------------------------------------
  *	Ö¸Áî:Çå³ýFlash»º´æ
  *--------------------------------------------------------------------*/

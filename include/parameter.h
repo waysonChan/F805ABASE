@@ -177,6 +177,9 @@ int sp_set_mac_addr(system_param_t *S, const uint8_t *mac_addr);
 void sp_get_ip_config(system_param_t *S, uint8_t *p);
 int sp_set_ip_config(system_param_t *S, const uint8_t *ptr);
 
+void sp_get_dsc_ip(system_param_t *S, uint8_t *ip);
+int sp_set_dsc_ip(system_param_t *S, const uint8_t *ip);
+
 int sp_set_tcp_port(system_param_t *S, uint16_t tcp_port);
 int sp_set_udp_port(system_param_t *S, uint16_t udp_port);
 int sp_set_reader_name(system_param_t *S, const char *name, size_t sz);

@@ -7,6 +7,7 @@
 #include "gpio.h"
 #include "report_tag.h"
 #include "cfg_file.h"
+#include "utility.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,6 +30,8 @@ static command_set_t cmdset_param_man = {
 #define PARATABLE_IMPORT	0x1
 #define PARATABLE_EXPORT	0x2
 
+#define DSC_IP_LEN		4
+#define DSC_TCP_PORT_LEN	2
 /*---------------------------------------------------------------------
  *	指令 0x10:参数表操作指令
  *--------------------------------------------------------------------*/
@@ -39,19 +42,20 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 	uint8_t addr = *(cmd_param+1);
 	uint8_t len = *(cmd_param+2);
 
-	log_msg("addr = %d, len = %d", addr, len);
+	log_msg("type = %d, addr = %d, len = %d", *cmd_param, addr, len);
 
 	switch (*cmd_param) {
 	case PARATABLE_RESTORE:
 		log_msg("coping");
 		system("cp /f806/f806.cfg.bk /f806/f806.cfg");
 		break;
-	case PARATABLE_IMPORT:
+	case PARATABLE_IMPORT: {
+#if 0
 		if (len != 1) {
 			err = ERRCODE_CMD_ERRTYPE;
 			goto out;
 		}
-
+#endif
 		uint8_t im_val = *(cmd_param+3);
 		switch (addr) {
 		case 0:		/* work mode */
@@ -172,18 +176,37 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				goto out;
 			}
 			break;
+		case 250: 	/* dsc ip */
+			if (len != DSC_IP_LEN) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+
+			sp_set_dsc_ip(S, cmd_param+3);
+			break;
+		case 254:	/* dsc tcp port */
+			if (len != DSC_TCP_PORT_LEN) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+
+			S->data_center.tcp_port = (*(cmd_param+3) << 8) + *(cmd_param+4);
+			cfg_set_data_center(&S->data_center);
+			break;
 		default:
 			err = ERRCODE_CMD_ERRTYPE;
 			goto out;
 		}
 
 		break;
-	case PARATABLE_EXPORT:
+	}
+	case PARATABLE_EXPORT: {
+#if 0
 		if (len != 1) {
 			err = ERRCODE_CMD_ERRTYPE;
 			goto out;
 		}
-
+#endif
 		uint8_t ex_val;
 		switch (addr) {
 		case 0:		/* work mode */
@@ -222,6 +245,19 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		case 249:	/* flash enable */
 			ex_val = S->pre_cfg.flash_enable;
 			break;
+		case 250: {	/* dsc ip */
+			uint8_t dsc_ip[DSC_IP_LEN] = {0};
+			sp_get_dsc_ip(S, dsc_ip);
+			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, CMD_EXE_SUCCESS, 
+				dsc_ip, sizeof(dsc_ip));
+			return;
+		}
+		case 254: {	/* dsc tcp port */
+			uint16_t tcp_port = swap16(S->data_center.tcp_port);
+			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, CMD_EXE_SUCCESS, 
+				&tcp_port, DSC_TCP_PORT_LEN);
+			return;
+		}
 		default:
 			err = ERRCODE_CMD_ERRTYPE;
 			goto out;
@@ -229,6 +265,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 
 		command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, err, &ex_val, 1);
 		return;
+	}
 	default:
 		err = ERRCODE_CMD_ERRTYPE;
 	}

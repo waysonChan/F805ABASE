@@ -110,6 +110,28 @@ int sp_set_ip_config(system_param_t *S, const uint8_t *ptr)
 	return 0;
 }
 
+/*---------------------------------------------------------------------
+ * 数据中心IP 配置
+ *--------------------------------------------------------------------*/
+void sp_get_dsc_ip(system_param_t *S, uint8_t *ip)
+{
+	int i, tmp[4];
+
+	sscanf(S->data_center.ip, "%d.%d.%d.%d", &tmp[0], &tmp[1], &tmp[2], &tmp[3]);
+	for (i = 0; i < 4; i++)
+		ip[i] = tmp[i] & 0xFF;	
+}
+
+int sp_set_dsc_ip(system_param_t *S, const uint8_t *ip)
+{
+	snprintf(S->data_center.ip, ETH_ADDR_LEN, "%d.%d.%d.%d",
+		ip[0], ip[1], ip[2], ip[3]);
+	if (cfg_set_data_center(&S->data_center) < 0)
+		return -1;
+
+	return 0;
+}
+
 int sp_set_tcp_port(system_param_t *S, uint16_t tcp_port)
 {
 	eth0_t eth0 = {.tcp_port = tcp_port};
