@@ -273,7 +273,7 @@ out:
 	return err;
 }
 
-int ether_set_ip_config(const uint8_t *ptr)
+int ether_set_ip_config(const uint8_t *ptr, bool is_gprs)
 {
 	/* ip */
 	int ip_addr;
@@ -292,11 +292,13 @@ int ether_set_ip_config(const uint8_t *ptr)
 	}
 
 	/* gateway */
-	int gate_way;
-	memcpy(&gate_way, ptr+8, 4);
-	if (ether_set_gate_way(gate_way)) {
-		log_msg("ether_set_gate_way error");
-		return -1;
+	if (!is_gprs) {
+		int gate_way;
+		memcpy(&gate_way, ptr+8, 4);
+		if (ether_set_gate_way(gate_way)) {
+			log_msg("ether_set_gate_way error");
+			return -1;
+		}
 	}
 
 	return 0;

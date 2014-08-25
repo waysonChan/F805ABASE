@@ -140,7 +140,7 @@ static inline int _get_cmd_id(int work_status, uint8_t *cmd_id)
 		*cmd_id = COMMAND_18K6C_MAN_READ_USERBANK;
 		break;
 	default:
-		log_msg("_get_cmd_id: invalid work_status.");
+		log_msg("_get_cmd_id: invalid work_status <%d>.", work_status);
 		return -1;
 	}
 
@@ -292,7 +292,8 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return -1;
 	}
 
-	if ((S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE) && (C->conn_type == R2H_GPRS 
+	if ((S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE) && 
+		((C->conn_type == R2H_GPRS && S->work_status != WS_STOP)
 		|| (C->conn_type == R2H_NONE 
 		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS))) {

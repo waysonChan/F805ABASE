@@ -277,7 +277,7 @@ system_param_t *sys_param_new(void)
 
 	uint8_t eth0[12];
 	sp_get_ip_config(S, eth0);
-	ether_set_ip_config(eth0);
+	ether_set_ip_config(eth0, S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS);
 
 	/* data center */
 	cfg_get_data_center(&S->data_center);

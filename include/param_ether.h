@@ -10,7 +10,7 @@ int ether_get_net_mask(uint8_t *mask);
 int ether_set_gate_way(uint32_t gate_way);
 int ether_get_gate_way(uint8_t *gate);
 
-int ether_set_ip_config(const uint8_t *ptr);
+int ether_set_ip_config(const uint8_t *ptr, bool is_gprs);
 
 int ether_get_mac_addr(uint8_t *pmac);
 int ether_set_mac_addr(const uint8_t *mac_addr);
