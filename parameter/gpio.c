@@ -200,8 +200,9 @@ int set_next_active_antenna(system_param_t *S)
 {
 	struct timeval now;
 	gettimeofday(&now, NULL);
-	if (msec_between(S->last_ant_change_time, now) < 
-		S->ant_array[S->cur_ant].switch_time * 100) {
+
+	int ms = msec_between(S->last_ant_change_time, now);
+	if (ms < S->ant_array[S->cur_ant-1].switch_time * 100) {
 		return -1;
 	} else {
 		S->last_ant_change_time = now;
