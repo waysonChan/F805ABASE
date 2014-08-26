@@ -153,7 +153,7 @@ static int r2h_gprs_timer_init(gprs_priv_t *gprs_priv)
 	}
 
 	struct itimerspec its = {
-		.it_interval.tv_sec = 3,
+		.it_interval.tv_sec = 10,
 		.it_interval.tv_nsec = 0,
 		.it_value.tv_sec = 1,
 		.it_value.tv_nsec = 0,

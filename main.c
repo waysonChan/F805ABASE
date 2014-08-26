@@ -11,6 +11,7 @@
 
 #include <signal.h>
 #include <string.h>
+#include <errno.h>
 
 int log_to_stderr = 0;
 
@@ -96,14 +97,12 @@ int main(int argc, char *argv[])
 			int optval;
 			socklen_t optlen = sizeof(optval);
 
-			if (getsockopt(C->r2h[R2H_GPRS].fd, SOL_SOCKET, SO_ERROR, 
-				&optval, &optlen)) {
-				log_ret("getsockopt error");
-			}
-
-			if (optval || gprs_cheek_connection(C)) {
+			ret = getsockopt(C->r2h[R2H_GPRS].fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+			if (ret < 0 || optval) {
 				log_msg("main: gprs upload connect unsuccessfully");
 				r2h_gprs_close(C);
+				if (optval)
+					errno = optval;
 			} else {
 				C->gprs_priv.connected = true;
 				C->conn_type = R2H_GPRS;
