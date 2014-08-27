@@ -74,7 +74,8 @@ int main(int argc, char *argv[])
 			}
 			for (i = 0; i < R2H_TOTAL; i++) {
 				if (((i == R2H_TCP) && (!C->accepted))
-					|| ((i == R2H_GPRS) && (!C->gprs_priv.connected)))
+					|| ((i == R2H_GPRS) && (!C->gprs_priv.connected))
+					|| (C->r2h[i].fd < 0))
 					continue;
 				maxfd = MAX(maxfd, C->r2h[i].fd);
 				FD_SET(C->r2h[i].fd, &readset);
