@@ -99,12 +99,18 @@ static int r2h_wifi_close_client(r2h_connect_t *C)
 	return 0;
 }
 
-int r2h_wifi_init(r2h_connect_t *C, int baud_rate)
+int r2h_wifi_init(r2h_connect_t *C, system_param_t *S, int baud_rate)
 {
 	C->r2h[R2H_WIFI].open = r2h_wifi_open;
 	C->r2h[R2H_WIFI].close_client = r2h_wifi_close_client;
 	C->r2h[R2H_WIFI].recv = r2h_wifi_recv;
 	C->r2h[R2H_WIFI].send = r2h_wifi_send;
 
-	return r2h_wifi_open(C, baud_rate);
+	if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_WIFI) {
+		return r2h_wifi_open(C, baud_rate);
+	} else {
+		C->r2h[R2H_WIFI].fd = -1;
+	}
+
+	return 0;
 }

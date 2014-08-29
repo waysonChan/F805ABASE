@@ -203,6 +203,8 @@ int r2h_gprs_init(r2h_connect_t *C, system_param_t *S)
 	if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
 		_gprs_connect_try(C);
 		r2h_gprs_timer_init(&C->gprs_priv);
+	} else {
+		C->r2h[R2H_GPRS].fd = -1;
 	}
 	
 	return 0;
