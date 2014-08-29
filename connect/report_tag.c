@@ -35,6 +35,10 @@ static tag_t *_list_new(tag_t *p)
 {
 	/* 1.分配内存 */
 	tag_t *new_tag = malloc(sizeof(tag_t));
+	if (new_tag == NULL) {
+		log_msg("_list_new: malloc error");
+		return NULL;
+	}
 
 	/* 2.填充数据 */
 	new_tag->first_time = p->first_time;
@@ -88,7 +92,9 @@ static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
 
 	if (false == exist) {
 		tag_t *new_tag = _list_new(ptag);
-		_list_add_tail(new_tag, tag_report);
+		if (new_tag) {
+			_list_add_tail(new_tag, tag_report);
+		}
 	}
 
 	return 0;

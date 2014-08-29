@@ -126,7 +126,7 @@ typedef struct {
 #define UPLOAD_MODE_GPRS	0x05
 
 #define NAND_FLASH_ENBABLE	0x01
-#define NAND_FLASH_DISABLE	0x02
+#define NAND_FLASH_DISABLE	0x00
 
 #define OPERATE_READ_EPC	0x91
 #define OPERATE_READ_TID	0x92
