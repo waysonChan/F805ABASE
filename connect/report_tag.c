@@ -29,6 +29,7 @@ static void _list_add_tail(tag_t *p, tag_report_t *tag_report)
 	p->prev = tail->prev;
 	tail->prev->next = p;
 	tail->prev = p;
+	tag_report->tag_cnt++;
 }
 
 static tag_t *_list_new(tag_t *p)
@@ -37,7 +38,7 @@ static tag_t *_list_new(tag_t *p)
 	tag_t *new_tag = malloc(sizeof(tag_t));
 	if (new_tag == NULL) {
 		log_msg("_list_new: malloc error");
-		return NULL;
+		return new_tag;
 	}
 
 	/* 2.填充数据 */
@@ -53,26 +54,34 @@ static tag_t *_list_new(tag_t *p)
 	return new_tag;
 }
 
-static void _list_delete(tag_t *p)
+static void _list_delete(tag_t *p, tag_report_t *tag_report)
 {
 	p->prev->next = p->next;
 	p->next->prev = p->prev;
 
 	/* 释放内存 */
 	free(p);
+
+	/* 减计数 */
+	if (tag_report->tag_cnt > 0) {
+		tag_report->tag_cnt--;
+	} else {
+		log_msg("_list_delete: tag count <= 0 when delete tag!!!");
+	}
 }
 
-void list_delete_header(void)
+void list_delete_header(tag_report_t *tag_report)
 {
 	if (head_tag_sentinel.next == &tail_tag_sentinel) {
 		log_msg("list_delete_header: list empty");
 		return;
 	} else {
 		tag_t *p = head_tag_sentinel.next;
-		_list_delete(p);
+		_list_delete(p, tag_report);
 	}
 }
 
+#define MAX_TAG_NUM_IN_RAM	5000
 static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
 {
 	bool exist = false;
@@ -91,6 +100,10 @@ static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
 	}
 
 	if (false == exist) {
+		if (tag_report->tag_cnt >= MAX_TAG_NUM_IN_RAM) {
+			list_delete_header(tag_report);
+		}
+		
 		tag_t *new_tag = _list_new(ptag);
 		if (new_tag) {
 			_list_add_tail(new_tag, tag_report);
@@ -242,7 +255,7 @@ static int _tag_storage_write_all(tag_report_t *tag_report)
 		_append_tag_time(p);
 		tag_storage_write(p);
 		p = p->next;
-		_list_delete(p->prev);
+		_list_delete(p->prev, tag_report);
 	}
 
 	return tag_storage_fflush();
@@ -334,11 +347,8 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		}
 
 		p = p->next;
-		_list_delete(p->prev);
+		_list_delete(p->prev, &A->tag_report);
 	}
-
-	tag_report->tag_cnt = 0;
-	tag_report->tag_total = 0;
 
 	return 0;
 }
@@ -363,6 +373,7 @@ int report_tag_set_timer(ap_connect_t *A, uint32_t ms)
 
 int report_tag_init(tag_report_t *tag_report)
 {
+	tag_report->tag_cnt = 0;
 	tag_report->head_tag = &head_tag_sentinel;
 	tag_report->tail_tag = &tail_tag_sentinel;
 
@@ -393,10 +404,9 @@ int report_tag_reset(tag_report_t *tag_report)
 
 	for (p = head->next; p != tail; ) {
 		p = p->next;
-		_list_delete(p->prev);		
+		_list_delete(p->prev, tag_report);		
 	}
 	
-	tag_report->tag_total = 0;
 	tag_report->tag_cnt = 0;
 	return 0;
 }
