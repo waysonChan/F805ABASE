@@ -6,7 +6,7 @@
 #include "r2h_connect.h"
 #include "ap_connect.h"
 
-void list_delete_header(tag_report_t *tag_report);
+void tag_report_list_del(tag_report_t *tag_report);
 int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag);
 int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
 int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);

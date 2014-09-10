@@ -4,6 +4,7 @@
 #include "config.h"
 #include "rfid_packets.h"
 #include "parameter.h"
+#include "list.h"
 
 #include <time.h>
 
@@ -28,8 +29,7 @@ typedef struct {
 
 typedef struct _tag_t tag_t;
 struct _tag_t{
-	tag_t *prev;
-	tag_t *next;
+	struct list_head list;
 	bool has_append_time;		/* 防止多次追加时间 */
 	uint8_t ant_index;		/* 最后一次读到的天线ID */
 	time_t first_time;		/* 第1次读卡时间 */
@@ -44,12 +44,9 @@ typedef struct {
 	uint8_t filter_time;		/* 标签过滤时间,单位100ms */
 	uint16_t speed;			/* 标签读取速率(张/秒) */
 	uint32_t tag_cnt;		/* 标签数量(不计重复标签) */
-	uint32_t tag_total;		/* 标签数量 */
 	int filter_timer;		/* 过滤描述符 */
 	struct itimerspec filter_its;	/* 过滤定时器 */
 	struct timeval start_time;	/* 开始读卡时间 */	
-	tag_t *head_tag;
-	tag_t *tail_tag;
 } tag_report_t;
 
 typedef struct {

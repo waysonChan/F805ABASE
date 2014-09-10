@@ -11,106 +11,75 @@
 #include <sys/timerfd.h>
 #include <stdlib.h>
 
-static tag_t tail_tag_sentinel;
-static tag_t head_tag_sentinel = {
-	.prev = NULL,
-	.next = &tail_tag_sentinel,
-};
+LIST_HEAD(tag_report_list);
 
-static tag_t tail_tag_sentinel = {
-	.prev = &head_tag_sentinel,
-	.next = NULL,
-};
-
-static void _list_add_tail(tag_t *p, tag_report_t *tag_report)
+/* 链表尾添加 */
+#define MAX_TAG_NUM_IN_RAM	5000
+int tag_report_list_add(tag_t *p, tag_report_t *tag_report)
 {
-	tag_t *tail = tag_report->tail_tag;
-	p->next = tail;
-	p->prev = tail->prev;
-	tail->prev->next = p;
-	tail->prev = p;
-	tag_report->tag_cnt++;
-}
-
-static tag_t *_list_new(tag_t *p)
-{
-	/* 1.分配内存 */
-	tag_t *new_tag = malloc(sizeof(tag_t));
-	if (new_tag == NULL) {
-		log_msg("_list_new: malloc error");
-		return new_tag;
+	/* 1.存在性检查 */
+	struct list_head *l;
+	for (l = tag_report_list.next; l != &tag_report_list; l = l->next) {
+		tag_t *tmp = list_entry(l, tag_t, list);
+		if (p->tag_len == tmp->tag_len
+			&& !memcmp(p->data, tmp->data, p->tag_len)) {
+			tmp->cnt++;
+			time(&tmp->last_time);
+			return 0;
+		}
 	}
 
-	/* 2.填充数据 */
+	/* 2.总量检查 */
+	if (tag_report->tag_cnt >= MAX_TAG_NUM_IN_RAM) {
+		tag_report_list_del(tag_report);
+	}
+
+	/* 3.实例化 */
+	/* 3.1分配内存 */
+	tag_t *new_tag = malloc(sizeof(tag_t));
+	if (!new_tag) {
+		log_msg("tag_report_list_add: malloc error");
+		return -1;
+	}
+
+	/* 3.2填充数据 */
 	new_tag->first_time = p->first_time;
 	new_tag->cnt = 1;
 	new_tag->tag_len = p->tag_len;
 	new_tag->ant_index = p->ant_index;
 	memcpy(new_tag->data, p->data, p->tag_len);
 
-	/* 3.防止多次追加时间 */
+	/* 3.3防止多次追加时间 */
 	new_tag->has_append_time = false;
 
-	return new_tag;
-}
+	/* 4.添加链表 */
+	list_add_tail(&new_tag->list, &tag_report_list);
 
-static void _list_delete(tag_t *p, tag_report_t *tag_report)
-{
-	p->prev->next = p->next;
-	p->next->prev = p->prev;
-
-	/* 释放内存 */
-	free(p);
-
-	/* 减计数 */
-	if (tag_report->tag_cnt > 0) {
-		tag_report->tag_cnt--;
-	} else {
-		log_msg("_list_delete: tag count <= 0 when delete tag!!!");
-	}
-}
-
-void list_delete_header(tag_report_t *tag_report)
-{
-	if (head_tag_sentinel.next == &tail_tag_sentinel) {
-		log_msg("list_delete_header: list empty");
-		return;
-	} else {
-		tag_t *p = head_tag_sentinel.next;
-		_list_delete(p, tag_report);
-	}
-}
-
-#define MAX_TAG_NUM_IN_RAM	5000
-static int  _tag_list_insert(tag_t *ptag, tag_report_t *tag_report)
-{
-	bool exist = false;
-	tag_t *p;
-	tag_t *head = tag_report->head_tag;
-	tag_t *tail = tag_report->tail_tag;
-
-	for (p = head->next; p != tail; p = p->next) {
-		if (ptag->tag_len == p->tag_len
-			&& !memcmp(p->data, ptag->data, ptag->tag_len)) {
-			p->cnt++;
-			time(&p->last_time);
-			exist = true;
-			break;
-		}
-	}
-
-	if (false == exist) {
-		if (tag_report->tag_cnt >= MAX_TAG_NUM_IN_RAM) {
-			list_delete_header(tag_report);
-		}
-		
-		tag_t *new_tag = _list_new(ptag);
-		if (new_tag) {
-			_list_add_tail(new_tag, tag_report);
-		}
-	}
+	/* 5.增加计数 */
+	tag_report->tag_cnt++;
 
 	return 0;
+}
+
+/* 链表头删除 */
+void tag_report_list_del(tag_report_t *tag_report)
+{
+	/* 1.存在性检查 */
+	if (list_empty(&tag_report_list)) {
+		log_msg("tag_report_list_del: list empty");
+		return;
+	}
+
+	/* 2.删除链表 */
+	struct list_head *l = tag_report_list.next;
+	list_del(l);
+
+	/* 3.删除实例 */
+	tag_t *p = list_entry(l, tag_t, list);		
+	free(p);
+
+	/* 4.减少计数 */
+	tag_report->tag_cnt--;
 }
 
 static int _append_tag_time(tag_t *ptag)
@@ -189,7 +158,7 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) {
 		switch (S->pre_cfg.upload_mode) {
 		case UPLOAD_MODE_WIEGAND:
-			return _tag_list_insert(ptag, &A->tag_report);
+			return tag_report_list_add(ptag, &A->tag_report);
 		case UPLOAD_MODE_RS232:
 			C->conn_type = R2H_RS232;
 			break;
@@ -237,7 +206,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 
 	/* 3.(过滤模式)处理 filter_enable */
 	if (A->tag_report.filter_enable)
-		return _tag_list_insert(ptag, &A->tag_report);
+		return tag_report_list_add(ptag, &A->tag_report);
 
 	/* 4. 为WIFI和GPRS加上时间 */
 	ptag->has_append_time = false;
@@ -247,32 +216,29 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 
 static int _tag_storage_write_all(tag_report_t *tag_report)
 {
-	tag_t *p;
-	tag_t *head = tag_report->head_tag;
-	tag_t *tail = tag_report->tail_tag;
+	struct list_head *l;
 
-	for (p = head->next; p != tail; ) {
+	for (l = tag_report_list.next; l != &tag_report_list; l = l->next) {
+		tag_t *p = list_entry(l, tag_t, list);
 		_append_tag_time(p);
 		tag_storage_write(p);
-		p = p->next;
-		_list_delete(p->prev, tag_report);
 	}
+	tag_storage_fflush();
 
-	return tag_storage_fflush();
+	return report_tag_reset(tag_report);
 }
 
 #define MAX_SEND_FAIL_TIMES	5
 int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
-	tag_t *p;
 	tag_report_t *tag_report = &A->tag_report;
-	tag_t *head = tag_report->head_tag;
-	tag_t *tail = tag_report->tail_tag;
 	gprs_priv_t *gprs_priv = &C->gprs_priv;
 
 	/* 1.处理链表tag */
-	if (head->next != tail) {
-		p = head->next;
+	if (!list_empty(&tag_report_list)) {
+		struct list_head *l = tag_report_list.next;
+		tag_t *p = list_entry(l, tag_t, list);
+
 		if (gprs_priv->gprs_wait_flag && (gprs_priv->gprs_fail_cnt++ >= MAX_SEND_FAIL_TIMES)) {
 			/* 将链表中tag写入文件 */
 			gprs_priv->gprs_fail_cnt = 0;
@@ -285,7 +251,6 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			return _finally_tag_send(C, S, A, p);
 		}
 	} else {
-#if 1
 		/* 2.处理文件tag */
 		tag_t tag;
 		if (tag_storage_read(&tag) < 0) {
@@ -297,7 +262,6 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			gprs_priv->gprs_send_type = GPRS_SEND_TYPE_NAND;
 			return _finally_tag_send(C, S, A, &tag);
 		}
-#endif
 	}
 
 	return 0;
@@ -319,12 +283,14 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return gprs_tag_send_header(C, S, A);
 	}
 
-	tag_t *p;
 	tag_report_t *tag_report = &A->tag_report;
-	tag_t *head = tag_report->head_tag;
-	tag_t *tail = tag_report->tail_tag;
 
-	for (p = head->next; p != tail; ) {
+	while (!list_empty(&tag_report_list)) {
+		/* 1.获取链表头tag */
+		struct list_head *l = tag_report_list.next;
+		tag_t *p = list_entry(l, tag_t, list);
+
+		/* 2.上传tag */
 		if (C->conn_type == R2H_NONE && S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 			&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
 			uint8_t *ptr = p->data;
@@ -333,9 +299,7 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				continue;
 			}
 
-			if (p != head->next) {
-				usleep(15000);	/* 发送间隔时间 */
-			}
+			usleep(15000);	/* TODO 发送间隔时间 */
 
 			if (S->pre_cfg.wg_len == WG_LEN_34) {
 				wiegand_send(C, ptr+S->pre_cfg.wg_start, 4);
@@ -346,8 +310,8 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			_finally_tag_send(C, S, A, p);
 		}
 
-		p = p->next;
-		_list_delete(p->prev, &A->tag_report);
+		/* 3.删除链表头tag */
+		tag_report_list_del(tag_report);
 	}
 
 	return 0;
@@ -374,9 +338,6 @@ int report_tag_set_timer(ap_connect_t *A, uint32_t ms)
 int report_tag_init(tag_report_t *tag_report)
 {
 	tag_report->tag_cnt = 0;
-	tag_report->head_tag = &head_tag_sentinel;
-	tag_report->tail_tag = &tail_tag_sentinel;
-
 	tag_report->filter_timer = timerfd_create(CLOCK_REALTIME, 0);
 	if (tag_report->filter_timer < 0) {		
 		log_ret("timerfd_create error");
@@ -392,21 +353,13 @@ int report_tag_init(tag_report_t *tag_report)
 	}
 
 	tag_storage_init();
-
 	return 0;
 }
 
 int report_tag_reset(tag_report_t *tag_report)
 {
-	tag_t *p;
-	tag_t *head = tag_report->head_tag;
-	tag_t *tail = tag_report->tail_tag;
-
-	for (p = head->next; p != tail; ) {
-		p = p->next;
-		_list_delete(p->prev, tag_report);		
+	while (tag_report->tag_cnt) {
+		tag_report_list_del(tag_report);
 	}
-	
-	tag_report->tag_cnt = 0;
 	return 0;
 }
