@@ -45,7 +45,7 @@ static int _r2000_hard_reset(ap_connect_t *A)
 {
 	//set_gpio_status(BEEP, GPO_OUTPUT_LOW);
 	set_gpio_status(R2000_RESET, 0);
-	usleep(50000);
+	usleep(100000);
 	set_gpio_status(R2000_RESET, 1);
 	usleep(300000);
 	rs232_flush(A->fd);

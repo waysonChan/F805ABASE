@@ -142,7 +142,7 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 	/* 1.»ñÈ¡ cmd_id */
 	uint8_t cmd_id;
 	if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
-		log_msg("report_tag_send: invalid cmd_id");
+		log_msg("_finally_tag_send: invalid cmd_id");
 		return -1;
 	}
 
