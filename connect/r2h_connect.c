@@ -12,7 +12,6 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	}
 
 	memset(C, 0, sizeof(r2h_connect_t));
-	C->connected = false;
 	C->accepted = false;
 	C->recv.rlen = 0;
 	C->send.wlen = 0;
@@ -24,7 +23,6 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 
 int r2h_connect_close_client(r2h_connect_t *C)
 {
-	C->connected = false;
 	C->accepted = false;
 	C->recv.rlen = 0;
 	C->send.wlen = 0;

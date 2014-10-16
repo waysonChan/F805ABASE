@@ -37,7 +37,6 @@ int main(int argc, char *argv[])
 
 	while (1) {
 		int i, ret, maxfd = 0;
-		int r2h_fd;
 		fd_set readset, writeset;
 		FD_ZERO(&readset);
 		FD_ZERO(&writeset);
@@ -63,23 +62,17 @@ int main(int argc, char *argv[])
 			FD_SET(S->gpo[i].pulse_timer, &readset);
 		}
 
-		if (C->connected) {
-			r2h_fd = C->r2h[C->conn_type].fd;
-			maxfd = MAX(maxfd, r2h_fd);
-			FD_SET(r2h_fd, &readset);
-		} else {
-			if (!C->accepted) {
-				maxfd = MAX(maxfd, C->listener);
-				FD_SET(C->listener, &readset);
-			}
-			for (i = 0; i < R2H_TOTAL; i++) {
-				if (((i == R2H_TCP) && (!C->accepted))
-					|| ((i == R2H_GPRS) && (!C->gprs_priv.connected))
-					|| (C->r2h[i].fd < 0))
-					continue;
-				maxfd = MAX(maxfd, C->r2h[i].fd);
-				FD_SET(C->r2h[i].fd, &readset);
-			}
+		/* 一直监听 */
+		maxfd = MAX(maxfd, C->listener);
+		FD_SET(C->listener, &readset);
+		
+		for (i = 0; i < R2H_TOTAL; i++) {
+			if (((i == R2H_TCP) && (!C->accepted))
+				|| ((i == R2H_GPRS) && (!C->gprs_priv.connected))
+				|| (C->r2h[i].fd < 0))
+				continue;
+			maxfd = MAX(maxfd, C->r2h[i].fd);
+			FD_SET(C->r2h[i].fd, &readset);
 		}
 
 		if (C->gprs_priv.connect_in_progress) {
@@ -137,26 +130,19 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if (C->connected) {
-			r2h_fd = C->r2h[C->conn_type].fd;
-			if (FD_ISSET(r2h_fd, &readset)) {
-				ret = r2h_connect_recv(C, R2H_BUF_SIZE);
+		if (FD_ISSET(C->listener, &readset)) {
+			if (C->accepted) {
+				r2h_connect_close_client(C);	/* 关闭之前的连接 */
+			}
+			r2h_tcp_accept(C);
+		}
+		
+		for (i = 0; i < R2H_TOTAL; i++) {
+			if (C->r2h[i].fd != -1 && FD_ISSET(C->r2h[i].fd, &readset)) {
+				//log_msg("i = %d, fd = %d", i, C->r2h[i].fd);
+				ret = r2h_connect_check_in(C, i);
 				if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
 					command_execute(C, S, A);
-				}
-			}
-		} else {
-			if (!C->accepted && FD_ISSET(C->listener, &readset)) {
-				r2h_tcp_accept(C);
-				continue;
-			}
-			for (i = 0; i < R2H_TOTAL; i++) {
-				if (C->r2h[i].fd != -1 && FD_ISSET(C->r2h[i].fd, &readset)) {
-					//log_msg("i = %d, fd = %d", i, C->r2h[i].fd);
-					ret = r2h_connect_check_in(C, i);
-					if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
-						command_execute(C, S, A);
-					}
 				}
 			}
 		}

@@ -75,7 +75,6 @@ typedef struct {
 #define R2H_TOTAL	7
 struct r2h_connect {
 	bool wifi_transparent_mode;		/* wifi 透传模式 */
-	bool connected;
 	bool accepted;		/* TCP专用 */
 	int listener;		/* TCP专用 */
 	r2h_recv_t recv;

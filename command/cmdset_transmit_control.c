@@ -20,7 +20,6 @@ static void ec_trans_ctrl_connect(r2h_connect_t *C, system_param_t *S, ap_connec
 	uint8_t err = CMD_EXE_SUCCESS;
 
 	log_msg("accept a client");
-	C->connected = true;
 	if (S->work_status != WS_STOP) {
 		stop_read_tag(S, A);
 	}
