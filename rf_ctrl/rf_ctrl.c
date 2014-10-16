@@ -25,6 +25,18 @@ static uint8_t cmd_resume[] = {0x40, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static uint8_t cmd_get_sn[] = {0xC0, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static uint8_t cmd_reset_bl[] = {0x40, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
+/*
+ * 此函数用于在R2000复位后,恢复复位前设置的功率
+ */
+static void _set_ant_power(ap_connect_t *A)
+{
+	write_mac_register(A, HST_ANT_DESC_SEL, 0x0);
+	write_mac_register(A, HST_ANT_DESC_CFG, 0x1);
+	write_mac_register(A, HST_ANT_DESC_PORTDEF, 0x0);
+	write_mac_register(A, HST_ANT_DESC_DWELL, 2000);
+	write_mac_register(A, HST_ANT_DESC_RFPOWER, A->cur_ant_power);	
+}
+
 #ifdef R2000_SOFT_RESET
 static uint8_t cmd_reset[] = {0x40, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 static int _r2000_soft_reset(ap_connect_t *A)
@@ -112,6 +124,7 @@ int r2000_control_command(ap_connect_t *A, ctrl_cmd_t ctrl_cmd)
 #else
 		err = _r2000_hard_reset(A);
 #endif
+		_set_ant_power(A);
 		break;
 	case R2000_ABORT:	/* response/P21 */
 		err = _r2000_abort(A);
@@ -254,6 +267,7 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 
 		switch (S->work_status) {
 		case WS_READ_EPC_FIXED:
+			r2000_set_ant_rfpower(S, A);
 			write_mac_register(A, HST_CMD, CMD_18K6CINV);
 			break;
 		case WS_READ_EPC_INTURN:
@@ -596,6 +610,7 @@ int r2000_set_ant_rfpower(system_param_t *S, ap_connect_t *A)
 		write_mac_register(A, HST_ANT_DESC_RFPOWER, 
 			RFPOWER_F806_TO_R2000(S->ant_array[S->cur_ant-1].rfpower));
 	}
+	A->cur_ant_power = RFPOWER_F806_TO_R2000(S->ant_array[S->cur_ant-1].rfpower);
 	return 0;
 }
 

@@ -61,5 +61,6 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 
 	A->recv.rlen = 0;
 	A->send.wlen = 0;
+	A->cur_ant_power = 0;
 	return A;
 }
