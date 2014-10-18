@@ -16,7 +16,7 @@
  * 0	EOF
  * -1	³ýEAGAINµÄ´íÎó
  */
-static ssize_t r2h_gprs_recv(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
+static ssize_t _r2h_gprs_recv(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 {
 	ssize_t ret = 0;
 	uint32_t n_read = 0;
@@ -64,7 +64,7 @@ static int _addr_init(struct sockaddr_in *paddr, data_center_t *data_center)
 	return 0;
 }
 
-int r2h_gprs_close(r2h_connect_t *C)
+static int _r2h_gprs_close(r2h_connect_t *C)
 {
 	C->gprs_priv.connected = false;
 	close(C->r2h[R2H_GPRS].fd);
@@ -126,11 +126,11 @@ static int _gprs_connect_try(r2h_connect_t *C)
 	return 0;
 
 out:
-	r2h_gprs_close(C);
+	_r2h_gprs_close(C);
 	return -1;
 }
 
-static int r2h_gprs_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
+static int _r2h_gprs_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 {
 	int err = -1;
 	gprs_priv_t *gprs_priv = &C->gprs_priv;
@@ -138,10 +138,32 @@ static int r2h_gprs_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 	if (gprs_priv->connected) {
 		err = _gprs_send(C, buf, nbytes);
 		if (err < 0)
-			r2h_gprs_close(C);
+			_r2h_gprs_close(C);
 	}
 
 	return err;
+}
+
+void r2h_gprs_conn_check(r2h_connect_t *C)
+{
+	int optval, ret;
+	socklen_t optlen = sizeof(optval);
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	
+	ret = getsockopt(C->r2h[R2H_GPRS].fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	if (ret < 0 || optval || getpeername(C->r2h[R2H_GPRS].fd, &addr, &addrlen)) {
+		log_msg("main: gprs upload connect unsuccessfully");
+		_r2h_gprs_close(C);
+		if (optval)
+			errno = optval;
+	} else{
+		C->gprs_priv.connected = true;
+		C->conn_type = R2H_GPRS;
+		log_msg("main: gprs upload connect successfully");
+	}
+	
+	C->gprs_priv.connect_in_progress = false;
 }
 
 static int r2h_gprs_timer_init(gprs_priv_t *gprs_priv)
@@ -155,7 +177,7 @@ static int r2h_gprs_timer_init(gprs_priv_t *gprs_priv)
 	struct itimerspec its = {
 		.it_interval.tv_sec = 10,
 		.it_interval.tv_nsec = 0,
-		.it_value.tv_sec = 1,
+		.it_value.tv_sec = 10,
 		.it_value.tv_nsec = 0,
 	};
 
@@ -191,9 +213,9 @@ int r2h_gprs_init(r2h_connect_t *C, system_param_t *S)
 	}
 
 	C->r2h[R2H_GPRS].open = NULL;
-	C->r2h[R2H_GPRS].close_client = r2h_gprs_close;
-	C->r2h[R2H_GPRS].recv = r2h_gprs_recv;
-	C->r2h[R2H_GPRS].send = r2h_gprs_send;
+	C->r2h[R2H_GPRS].close_client = _r2h_gprs_close;
+	C->r2h[R2H_GPRS].recv = _r2h_gprs_recv;
+	C->r2h[R2H_GPRS].send = _r2h_gprs_send;
 
 	C->gprs_priv.connect_in_progress = false;
 	C->gprs_priv.gprs_fail_cnt = 0;

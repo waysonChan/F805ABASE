@@ -88,22 +88,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (C->gprs_priv.connect_in_progress && FD_ISSET(C->r2h[R2H_GPRS].fd, &writeset)) {
-			int optval;
-			socklen_t optlen = sizeof(optval);
-
-			ret = getsockopt(C->r2h[R2H_GPRS].fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
-			if (ret < 0 || optval) {
-				log_msg("main: gprs upload connect unsuccessfully");
-				r2h_gprs_close(C);
-				if (optval)
-					errno = optval;
-			} else {
-				C->gprs_priv.connected = true;
-				C->conn_type = R2H_GPRS;
-				log_msg("main: gprs upload connect successfully");
-			}
-
-			C->gprs_priv.connect_in_progress = false;
+			r2h_gprs_conn_check(C);
 		}
 
 		if (FD_ISSET(A->fd, &readset)) {
