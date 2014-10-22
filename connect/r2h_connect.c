@@ -73,7 +73,7 @@ int r2h_connect_init(r2h_connect_t *C, system_param_t *S)
 	err |= r2h_udp_init(C, S->eth0.udp_port);
 	err |= r2h_rs232_init(C, baud_table[S->rs232.baud_rate], S->pre_cfg.upload_mode);
 	err |= r2h_rs485_init(C, baud_table[S->rs485.baud_rate]);
-	err |= r2h_usb_init(C, 115200);
+	err |= r2h_usb_init(C, R2H_USB_BAUD_RATE);
 	err |= r2h_wifi_init(C, S, 115200);
 	err |= wiegand_init(C, S->pre_cfg.wg_pulse_width);
 	err |= r2h_gprs_init(C, S);
