@@ -73,7 +73,7 @@ static void ec_time_config(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	t.tm_hour = convert_dec(cmd_param[2]);	/* 时 */
 	t.tm_wday = convert_dec(cmd_param[3]);	/* 星期 */
 	t.tm_mday = convert_dec(cmd_param[4]);	/* 日 */
-	t.tm_mon = convert_dec(cmd_param[5] - 1);	/* 月 */
+	t.tm_mon = convert_dec(cmd_param[5]) - 1;	/* 月 */
 	t.tm_year = convert_dec(cmd_param[6]) + 100;	/* 年 */
 	t.tm_isdst = 0;
 
