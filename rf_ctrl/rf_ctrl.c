@@ -611,6 +611,8 @@ int r2000_set_ant_rfpower(system_param_t *S, ap_connect_t *A)
 			RFPOWER_F806_TO_R2000(S->ant_array[S->cur_ant-1].rfpower));
 	}
 	A->cur_ant_power = RFPOWER_F806_TO_R2000(S->ant_array[S->cur_ant-1].rfpower);
+
+	log_msg("rfpower = %d", A->cur_ant_power);
 	return 0;
 }
 
