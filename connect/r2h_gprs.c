@@ -148,11 +148,9 @@ void r2h_gprs_conn_check(r2h_connect_t *C)
 {
 	int optval, ret;
 	socklen_t optlen = sizeof(optval);
-	struct sockaddr addr;
-	socklen_t addrlen = sizeof(addr);
 	
 	ret = getsockopt(C->r2h[R2H_GPRS].fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
-	if (ret < 0 || optval || getpeername(C->r2h[R2H_GPRS].fd, &addr, &addrlen)) {
+	if (ret < 0 || optval) {
 		log_msg("main: gprs upload connect unsuccessfully");
 		_r2h_gprs_close(C);
 		if (optval)
