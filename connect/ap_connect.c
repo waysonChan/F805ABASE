@@ -34,7 +34,7 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 
 	r2000_control_command(A, R2000_SOFTRESET);
 	if (r2000_control_command(A, R2000_GET_SN) < 0)
-		log_quit("R2000 not found");
+		log_msg("R2000 not found");
 
 	uint32_t mac_ver;
 	if (read_mac_register(A, MAC_VER, &mac_ver) < 0) {
@@ -42,6 +42,8 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 	} else {
 		log_msg("MAC firmware version: %ld.%ld.%ld", (mac_ver>>24)&0xFF, 
 			(mac_ver>>16)&0xFF, (mac_ver>>8)&0xFF);
+		snprintf(S->sysinfo.fpga_swrev, READER_FPGA_SWREV_LEN, "%d.%d.%d", 
+			(mac_ver>>24)&0xFF, (mac_ver>>16)&0xFF, (mac_ver>>8)&0xFF);
 	}
 
 	r2000_check_freq_std(S, A);

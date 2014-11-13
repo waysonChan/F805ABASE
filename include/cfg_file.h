@@ -9,10 +9,10 @@
 #define READER_NAME_LEN			8
 #define READER_TYPE_LEN			6
 #define PRODUCT_SN_LEN			8
-#define READER_MCU_SWREV_LEN		4
-#define READER_FPGA_SWREV_LEN		4
-#define READER_BSB_HWREV_LEN		4
-#define READER_RFB_SWREV_LEN		4
+#define READER_MCU_SWREV_LEN		8
+#define READER_FPGA_SWREV_LEN		8
+#define READER_BSB_HWREV_LEN		8
+#define READER_RFB_SWREV_LEN		8
 #define PASSWORD_LEN			6
 
 typedef enum {

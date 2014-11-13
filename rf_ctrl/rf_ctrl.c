@@ -856,20 +856,24 @@ uint32_t r2000_oem_read(ap_connect_t *A, uint16_t addr)
 #define FREQ_STD_FCC	2
 #define FREQ_STD_CE	3
 
+#define FREQ_DIV_GB	0x30
+#define FREQ_DIV_FCC	0x18
+#define FREQ_DIV_CE	0x3C
+
 int r2000_check_freq_std(system_param_t *S, ap_connect_t *A)
 {
 	uint32_t plldivmult;
 	read_mac_register(A, HST_RFTC_FRQCH_DESC_PLLDIVMULT, &plldivmult);
-	log_msg("plldivmult = %08X", plldivmult);
 
-	uint16_t mult = plldivmult & 0xFFFF;
-	if (mult >= 0x1CC5 && mult <= 0x1CC5+15*2) {
+	uint8_t div = (plldivmult & 0x00FF0000) >> 16;
+	log_msg("div = 0x%02X", div);
+	if (div == FREQ_DIV_GB) {
 		/* GB */
-		S->freq_std = FREQ_STD_GB;
-	} else if (mult >= 0x0E1B && mult <= 0x0E1B+49*2) {
+		S->freq_std = FREQ_STD_GB;		
+	} else if (div == FREQ_DIV_FCC) {
 		/* FCC */
-		S->freq_std = FREQ_STD_FCC;
-	} else if (mult >= 0x21CA && mult <= 0x21CA+15*2) {
+		S->freq_std = FREQ_STD_FCC;	
+	} else if (div == FREQ_DIV_CE) {
 		/* CE */
 		S->freq_std = FREQ_STD_CE;
 	} else {
