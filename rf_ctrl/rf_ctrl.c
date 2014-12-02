@@ -279,13 +279,14 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		case WS_READ_TID_INTURN:
 		case WS_READ_EPC_TID_INTURN:
 			set_next_active_antenna(S);
-			r2000_set_ant_rfpower(S, A);
 			/* no break */
 		case WS_READ_TID_FIXED:
 		case WS_READ_EPC_TID_FIXED:
+			r2000_set_ant_rfpower(S, A);
 			r2000_tag_read(&S->tag_param, A);
 			break;
 		case WS_READ_USER:
+			r2000_set_ant_rfpower(S, A);
 			if (C->conn_type != R2H_NONE) {
 				work_status_timer_set(S, 0);
 				S->work_status = WS_STOP;
