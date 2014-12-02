@@ -211,7 +211,7 @@ int r2000_error_check(ap_connect_t *A)
 			r2000_control_command(A, R2000_SOFTRESET);
 		}
 #else
-		if (mac_err != 0x0309) {	/* 没接天线也报 0x0309 故不能复位 */
+		if (mac_err != 0x0309 && mac_err != 0x0316) {	/* 没接天线也报 0x0309 故不能复位 */
 			log_msg(">>>>> reseting R2000 <<<<<");
 			r2000_control_command(A, R2000_SOFTRESET);			
 		}
