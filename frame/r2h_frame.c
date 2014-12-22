@@ -86,9 +86,9 @@ int r2h_frame_parse(r2h_connect_t *C, int result)
 
 	if (result > 0) {
 		C->recv.rlen = result;
-	} else if (result == 0) {
+	} else if (result == 0 && (C->conn_type == R2H_TCP || C->conn_type == R2H_USB)) {
 		/* EOF */
-		log_msg("recv EOF, close client.");
+		log_msg("recv EOF, close client. <conn_type = %d>", C->conn_type);
 		r2h_connect_close_client(C);
 		goto out;
 	} else if (result == -1) {

@@ -89,7 +89,7 @@ struct r2h_connect {
 int r2h_tcp_accept(r2h_connect_t *C);
 int r2h_tcp_init(r2h_connect_t *C, int tcp_port);
 int r2h_udp_init(r2h_connect_t *C, int udp_port);
-int r2h_rs232_init(r2h_connect_t *C, int baud_rate, int upload_mode);
+int r2h_rs232_init(r2h_connect_t *C, system_param_t *S, int baud_rate);
 ssize_t r2h_rs232_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes);
 int r2h_rs485_init(r2h_connect_t *C, int baud_rate);
 ssize_t r2h_rs485_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes);
@@ -115,5 +115,6 @@ void r2h_gprs_conn_check(r2h_connect_t *C);
 int r2h_gprs_timer_trigger(r2h_connect_t *C);
 int r2h_gprs_init(r2h_connect_t *C, system_param_t *S);
 
+int wifi_3plus_timer_trigger(r2h_connect_t *C);
 
 #endif	/* _R2H_CONNECTION_H */
