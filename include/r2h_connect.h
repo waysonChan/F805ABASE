@@ -115,6 +115,4 @@ void r2h_gprs_conn_check(r2h_connect_t *C);
 int r2h_gprs_timer_trigger(r2h_connect_t *C);
 int r2h_gprs_init(r2h_connect_t *C, system_param_t *S);
 
-int wifi_3plus_timer_trigger(r2h_connect_t *C);
-
 #endif	/* _R2H_CONNECTION_H */

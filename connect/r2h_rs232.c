@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/timerfd.h>
 #include <string.h>
 
 #define RS232_NONBLOCK		0
