@@ -679,20 +679,41 @@ static void ec_tag_param_config(r2h_connect_t *C, system_param_t *S, ap_connect_
 		S->tag_param.q_val = *(cmd_param+1);
 		break;
 	case TAG_SELECT_PARAM:
-		//int ret = radio_18k6c_tag_select(*(cmd_param+1), *(cmd_param+3),
-		//	*(cmd_param+4), cmd_param+5);
-		//if (ret < 0) {
-		//	err = ERRCODE_EPC_UNKNOWERR;
-		//	log_msg("%s: radio_18k6c_tag_select ERR!", __FUNCTION__);
-		//	break;
-		//}
-		S->tag_param.tag_select_type = TAG_SELECT_ALWAYS;	/* TODO */
+		if ((*(cmd_param+1) != RFID_18K6C_MEMORY_BANK_EPC) &&
+			(*(cmd_param+1) != RFID_18K6C_MEMORY_BANK_TID) &&
+			(*(cmd_param+1) != RFID_18K6C_MEMORY_BANK_USER)) {
+			err = ERRCODE_CMD_FRAME;
+			goto out;
+		}
+
+		select_param_t *param = &A->select_param;
+		param->bank = *(cmd_param+1);
+		param->offset = (*(cmd_param + 2)<<8) | (*(cmd_param + 3));
+		if (param->offset > 0x3FFF) {
+			err = ERRCODE_CMD_PARAM;
+			goto out;
+		}
+		
+		param->count = *(cmd_param + 4);
+		log_msg("bank = %d; offset = %d; count = %d", param->bank, 
+			param->offset, param->count);
+		
+		if (param->bank == RFID_18K6C_MEMORY_BANK_EPC) {
+			param->offset += 32;
+		}
+		
+		int nbyte = (param->count % 8) == 0 ? param->count/8 : param->count/8+1;
+		memcpy(param->mask, cmd_param + 5, nbyte);
+		
+		r2000_tag_select(param, A);
+		write_select_param(param);
 		break;
 	default:
 		err = ERRCODE_CMD_ERRTYPE;
 		log_msg("%s: Unkown parameter 0X%02X.", __FUNCTION__, *cmd_param);
 	}
 
+out:
 	command_answer(C, COMMAND_PARAMETER_MAN_TAG_CFG, err, NULL, 0);
 }
 

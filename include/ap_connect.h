@@ -57,6 +57,7 @@ typedef struct {
 	ap_recv_t recv;
 	ap_send_t send;
 	tag_report_t tag_report;
+	select_param_t select_param;
 } ap_connect_t;
 
 int ap_conn_recv(ap_connect_t *A);

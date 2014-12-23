@@ -126,6 +126,9 @@ int r2000_control_command(ap_connect_t *A, ctrl_cmd_t ctrl_cmd)
 		err = _r2000_hard_reset(A);
 #endif
 		_set_ant_power(A);
+		if (A->select_param.count) {
+			r2000_tag_select(&A->select_param, A);
+		}
 		break;
 	case R2000_ABORT:	/* response/P21 */
 		err = _r2000_abort(A);
@@ -826,7 +829,7 @@ int r2000_tag_kill(tag_param_t *T, ap_connect_t *A)
 	return 0;
 }
 
-int r2000_tag_select(tag_param_t *T, ap_connect_t *A)
+int r2000_tag_select(select_param_t *param, ap_connect_t *A)
 {
 	/* 标签分组 */
 	write_mac_register(A, HST_QUERY_CFG, 0x180);
@@ -834,18 +837,18 @@ int r2000_tag_select(tag_param_t *T, ap_connect_t *A)
 
 	/* 标签选择 */
 	write_mac_register(A, HST_TAGMSK_DESC_CFG, 0x9);
-	write_mac_register(A, HST_TAGMSK_BANK, T->select_bank);
-	write_mac_register(A, HST_TAGMSK_PTR, T->select_offset);
+	write_mac_register(A, HST_TAGMSK_BANK, param->bank);
+	write_mac_register(A, HST_TAGMSK_PTR, param->offset);
 
-	int i, count = (T->select_count % 32) == 0 ? T->select_count : T->select_count+32;
+	int i, count = (param->count % 32) == 0 ? param->count : param->count+32;
 	for (i = 0; i < count/32; i++) {
-		uint32_t reg_val = T->select_mask[i*4] |
-			(T->select_mask[i*4+1]<<8) |
-			(T->select_mask[i*4+2]<<16) |
-			(T->select_mask[i*4+3]<<24);
+		uint32_t reg_val = param->mask[i*4] |
+			(param->mask[i*4+1]<<8) |
+			(param->mask[i*4+2]<<16) |
+			(param->mask[i*4+3]<<24);
 		write_mac_register(A, HST_TAGMSK_0_3+i, reg_val);
 	}
-	write_mac_register(A, HST_TAGMSK_LEN, T->select_count);
+	write_mac_register(A, HST_TAGMSK_LEN, param->count);
 
 	return 0;
 }

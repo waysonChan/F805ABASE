@@ -32,7 +32,7 @@ int r2000_tag_read(tag_param_t *T, ap_connect_t *A);
 int r2000_tag_write(tag_param_t *T, ap_connect_t *A);
 int r2000_tag_lock(r2h_connect_t *C, tag_param_t *T, ap_connect_t *A);
 int r2000_tag_kill(tag_param_t *T, ap_connect_t *A);
-int r2000_tag_select(tag_param_t *T, ap_connect_t *A);
+int r2000_tag_select(select_param_t *param, ap_connect_t *A);
 int r2000_tag_deselect(ap_connect_t *A);
 int r2000_check_freq_std(system_param_t *S, ap_connect_t *A);
 int r2000_freq_config(system_param_t *S, ap_connect_t *A);

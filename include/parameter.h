@@ -113,15 +113,15 @@ typedef enum {
 #define RFPOWER_R2000_TO_F806(x) ((x)/10-20)
 
 typedef struct {
+	uint16_t bank;
+	uint16_t offset;
+	uint16_t count;
+	uint8_t mask[64];	
+} select_param_t;
+
+typedef struct {
 	/* inventory 参数 */
 	uint8_t q_val;
-
-	/* select 参数 */
-	uint16_t select_bank;
-	uint16_t select_offset;
-	uint16_t select_count;
-	uint8_t select_mask[64];
-	tag_select_type_e tag_select_type;
 
 	/* kill 参数 */
 	uint8_t kill_pwd[4];
@@ -187,6 +187,9 @@ int sp_set_reader_name(system_param_t *S, const char *name, size_t sz);
 int sp_set_reader_type(system_param_t *S, const char *type, size_t sz);
 int sp_set_reader_sn(system_param_t *S, const char *reader_sn, size_t sz);
 int sp_set_password(system_param_t *S, const char *password, size_t sz);
+
+int read_select_param(select_param_t *param);
+int write_select_param(select_param_t *param);
 
 int work_status_timer_int(system_param_t *S);
 int work_status_timer_set(system_param_t *S, int ms);

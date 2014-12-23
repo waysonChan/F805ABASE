@@ -203,6 +203,45 @@ int sp_set_password(system_param_t *S, const char *password, size_t sz)
 	return 0;
 }
 
+/*---------------------------------------------------------------------
+ * select parameters
+ *--------------------------------------------------------------------*/
+int read_select_param(select_param_t *param)
+{
+	FILE *fp = fopen("/f806/select.bin", "r");
+	if (!fp) {
+		log_msg("fopen error");
+		return -1;
+	}
+
+	size_t sz = fread(param, sizeof(select_param_t), 1, fp);
+	if (sz != 1) {
+		log_msg("fread error");
+		fclose(fp);
+		return -1;
+	}
+	
+	return fclose(fp);
+}
+
+int write_select_param(select_param_t *param)
+{
+	FILE *fp = fopen("/f806/select.bin", "w+");
+	if (!fp) {
+		log_msg("fopen error");
+		return -1;
+	}
+
+	size_t sz = fwrite(param, sizeof(select_param_t), 1, fp);
+	if (sz != 1) {
+		log_msg("fread error");
+		fclose(fp);
+		return -1;
+	}
+	
+	return fclose(fp);
+}
+
 /*
  * 注意:此定时器防止读用户数据区时因收不到 COMMAND_END 而陷入
  * S->work_status 永远置为WS_READ_USER的状态

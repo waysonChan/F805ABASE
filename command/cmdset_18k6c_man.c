@@ -73,26 +73,27 @@ static void ec_18k6c_select_tag(r2h_connect_t *C, system_param_t *S, ap_connect_
 		err = ERRCODE_SYS_R2000_ERR;
 		goto out;
 	}
-	tag_param_t *T = &S->tag_param;
-	T->select_bank = *cmd_param;
-	T->select_offset = (*(cmd_param + 1)<<8) | (*(cmd_param + 2));
-	if (T->select_offset > 0x3FFF) {
+
+	select_param_t *param = &A->select_param;
+	param->bank = *cmd_param;
+	param->offset = (*(cmd_param + 1)<<8) | (*(cmd_param + 2));
+	if (param->offset > 0x3FFF) {
 		err = ERRCODE_CMD_PARAM;
 		goto out;
 	}
 	
-	T->select_count = *(cmd_param + 3);
-	log_msg("bank = %d; offset = %d; count = %d", T->select_bank, 
-		T->select_offset, T->select_count);
+	param->count = *(cmd_param + 3);
+	log_msg("bank = %d; offset = %d; count = %d", param->bank, 
+		param->offset, param->count);
 
-	if (T->select_bank == RFID_18K6C_MEMORY_BANK_EPC) {
-		T->select_offset += 32;
+	if (param->bank == RFID_18K6C_MEMORY_BANK_EPC) {
+		param->offset += 32;
 	}
 
-	int nbyte = (T->select_count % 8) == 0 ? T->select_count/8 : T->select_count/8+1;
-	memcpy(T->select_mask, cmd_param + 4, nbyte);
+	int nbyte = (param->count % 8) == 0 ? param->count/8 : param->count/8+1;
+	memcpy(param->mask, cmd_param + 4, nbyte);
 
-	r2000_tag_select(T, A);
+	r2000_tag_select(param, A);
 
 out:
 	command_answer(C, COMMAND_18K6C_MAN_SELECT_TAG, err, NULL, 0);

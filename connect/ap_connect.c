@@ -61,6 +61,12 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 		report_tag_set_timer(A, A->tag_report.filter_time * 100);
 	}
 
+	/* 标签选择参数 */
+	select_param_t param;
+	if (!read_select_param(&param)) {
+		r2000_tag_select(&param, A);
+	}
+
 	A->recv.rlen = 0;
 	A->send.wlen = 0;
 	A->cur_ant_power = 0;
