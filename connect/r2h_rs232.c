@@ -47,10 +47,10 @@ bool wifi_is_transparent_mode(r2h_connect_t *C)
 	uint8_t wbuf[] = {'A', 'T', '+', '\r', '\n'};
 	uint8_t rbuf[32] = {0};
 	rs232_write(C->r2h[R2H_WIFI].fd, wbuf, sizeof(wbuf));
-	if (rs232_read((C->r2h[R2H_WIFI].fd), rbuf, sizeof(rbuf)) == 0) {
-		return true;
-	} else {
+	if (rs232_read((C->r2h[R2H_WIFI].fd), rbuf, sizeof(rbuf)) > 0) {
 		return false;
+	} else {
+		return true;
 	}
 }
 
@@ -84,6 +84,7 @@ static ssize_t r2h_rs232_recv(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 				uint8_t response[] = {'+', 'O', 'K', '\r', '\n'};
 				r2h_rs232_send(C, response, sizeof(response));
 			} else {
+				sleep(2);	/* 必须: 经多次验证,改为1都不行 */
 				r2h_wifi_send(C, buf, ret);
 			}
 		} else {
