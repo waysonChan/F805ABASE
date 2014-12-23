@@ -52,6 +52,7 @@ typedef struct {
 typedef struct {
 	int fd;
 	bool connected;
+	bool r2000_error_log;
 	uint8_t cur_ant_power;		/* 供复位后恢复功率使用 */
 	ap_recv_t recv;
 	ap_send_t send;

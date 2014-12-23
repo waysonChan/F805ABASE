@@ -63,6 +63,16 @@ static void ec_18k6c_select_tag(r2h_connect_t *C, system_param_t *S, ap_connect_
 		goto out;
 	}
 
+	if (S->work_status != WS_STOP) {
+		log_msg("reader busy");
+		err = ERRCODE_OPT_READERBUSY;
+		goto out;
+	}
+
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
+		goto out;
+	}
 	tag_param_t *T = &S->tag_param;
 	T->select_bank = *cmd_param;
 	T->select_offset = (*(cmd_param + 1)<<8) | (*(cmd_param + 2));
@@ -120,6 +130,11 @@ static void ec_18k6c_read_epc(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		goto out;
 	}
 
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
+		goto out;
+	}
+	
 	if (ant_index >= 1 && ant_index <= 4) {
 		if ((!S->ant_array[ant_index-1].enable) || 
 			(set_active_antenna(S, ant_index) < 0)) {
@@ -129,7 +144,6 @@ static void ec_18k6c_read_epc(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		}
 		r2000_set_ant_rfpower(S, A);
 
-		r2000_error_check(A);
 		if (write_mac_register(A, HST_CMD, CMD_18K6CINV) < 0) {
 			log_msg("read epc error");
 			err = ERRCODE_EPC_UNKNOWERR;
@@ -141,7 +155,6 @@ static void ec_18k6c_read_epc(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		set_next_active_antenna(S);
 		r2000_set_ant_rfpower(S, A);
 
-		r2000_error_check(A);
 		if (write_mac_register(A, HST_CMD, CMD_18K6CINV) < 0) {
 			err = ERRCODE_EPC_UNKNOWERR;
 			goto out;
@@ -187,6 +200,11 @@ static void ec_18k6c_read_tid(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 	if (S->work_status != WS_STOP) {
 		log_msg("reader busy");
 		//err = ERRCODE_OPT_READERBUSY;
+		goto out;
+	}
+
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
 		goto out;
 	}
 
@@ -263,6 +281,11 @@ static void ec_18k6c_read_epc_tid(r2h_connect_t *C, system_param_t *S, ap_connec
 		goto out;
 	}
 
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
+		goto out;
+	}
+
 	tag_param_t *T = &S->tag_param;
 	T->access_bank = RFID_18K6C_MEMORY_BANK_TID;
 	T->access_offset = 0;
@@ -329,6 +352,11 @@ static void ec_18k6c_read_userbank(r2h_connect_t *C, system_param_t *S, ap_conne
 		goto out;
 	}
 
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
+		goto out;
+	}
+
 	tag_param_t *T = &S->tag_param;
 	T->access_bank = RFID_18K6C_MEMORY_BANK_USER;
 	T->access_offset = (*(cmd_param+1) << 8) | (*(cmd_param+2));
@@ -380,6 +408,17 @@ static void ec_18k6c_write_epc(r2h_connect_t *C, system_param_t *S, ap_connect_t
 
 	if (C->recv.frame.param_len != (*(cmd_param+6)*2 + 8)) {
 		err = ERRCODE_CMD_FRAME;
+		goto out;
+	}
+
+	if (S->work_status != WS_STOP) {
+		log_msg("reader busy");
+		err = ERRCODE_OPT_READERBUSY;
+		goto out;
+	}
+
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
 		goto out;
 	}
 
@@ -436,6 +475,11 @@ static void ec_18k6c_write_userbank(r2h_connect_t *C, system_param_t *S, ap_conn
 		goto out;
 	}
 
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
+		goto out;
+	}
+
 	int ant_index = *(cmd_param);
 	if (ant_index < 1 || ant_index > 4) {
 		err = ERRCODE_CMD_PARAM;
@@ -488,6 +532,17 @@ static void ec_18k6c_set_accesspin(r2h_connect_t *C, system_param_t *S, ap_conne
 		goto out;
 	}
 
+	if (S->work_status != WS_STOP) {
+		log_msg("reader busy");
+		err = ERRCODE_OPT_READERBUSY;
+		goto out;
+	}
+
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
+		goto out;
+	}
+
 	int ant_index = *(cmd_param);
 	if (ant_index < 1 || ant_index > 4) {
 		err = ERRCODE_CMD_PARAM;
@@ -529,6 +584,17 @@ static void ec_18k6c_set_killpin(r2h_connect_t *C, system_param_t *S, ap_connect
 
 	if (C->recv.frame.param_len != 11) {
 		err = ERRCODE_CMD_PARAM;
+		goto out;
+	}
+
+	if (S->work_status != WS_STOP) {
+		log_msg("reader busy");
+		err = ERRCODE_OPT_READERBUSY;
+		goto out;
+	}
+
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
 		goto out;
 	}
 
@@ -574,6 +640,17 @@ static void ec_18k6c_lock_operate(r2h_connect_t *C, system_param_t *S, ap_connec
 	if ((*(cmd_param+5) > 3) || (*(cmd_param+6) > 5) 
 		|| (C->recv.frame.param_len != 8)) {
 		err = ERRCODE_CMD_PARAM;
+		goto out;
+	}
+
+	if (S->work_status != WS_STOP) {
+		log_msg("reader busy");
+		err = ERRCODE_OPT_READERBUSY;
+		goto out;
+	}
+
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
 		goto out;
 	}
 
@@ -624,6 +701,17 @@ static void ec_18k6c_tag_kill(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 
 	if (C->recv.frame.param_len < 5 || C->recv.frame.param_len > 18) {
 		err = ERRCODE_CMD_PARAM;
+		goto out;
+	}
+
+	if (S->work_status != WS_STOP) {
+		log_msg("reader busy");
+		err = ERRCODE_OPT_READERBUSY;
+		goto out;
+	}
+
+	if (r2000_error_check(C, S, A) < 0) {
+		err = ERRCODE_SYS_R2000_ERR;
 		goto out;
 	}
 

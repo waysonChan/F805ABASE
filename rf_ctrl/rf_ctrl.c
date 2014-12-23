@@ -58,7 +58,7 @@ static int _r2000_hard_reset(ap_connect_t *A)
 {
 	//set_gpio_status(BEEP, GPO_OUTPUT_LOW);
 	set_gpio_status(R2000_RESET, 0);
-	usleep(100000);
+	usleep(50000);
 	set_gpio_status(R2000_RESET, 1);
 	usleep(300000);
 	rs232_flush(A->fd);
@@ -170,8 +170,9 @@ int read_mac_register(ap_connect_t *A, uint16_t reg_addr, uint32_t *reg_data)
 	ret = rs232_read(A->fd, (uint8_t *)&response, sizeof(response));
 	if (ret != sizeof(response)) {
 		/* 读寄存器出错,复位 */
-		log_msg("read_mac_register: rs232_read error, >>>>> reseting R2000 <<<<<");
-		r2000_control_command(A, R2000_SOFTRESET);			
+		//log_msg("read_mac_register: rs232_read error, >>>>> reseting R2000 <<<<<");
+		//r2000_control_command(A, R2000_SOFTRESET);	
+		log_msg("read_mac_register: rs232_read error");
 		return -1;
 	}
 #endif
@@ -189,33 +190,47 @@ int write_mac_register(ap_connect_t *A, uint16_t reg_addr, uint32_t reg_data)
 	return rs232_write(A->fd, (uint8_t *)&request, sizeof(request));
 }
 
-int r2000_error_check(ap_connect_t *A)
+static void _r2000_error_report(r2h_connect_t *C, uint8_t ant_index, uint32_t mac_err)
 {
-	uint32_t mac_err;
+	uint8_t wbuf[3] = {0};
+	wbuf[0] = ant_index;
+	wbuf[1] = mac_err >> 8;
+	wbuf[2] = mac_err & 0xFF;
+
+	command_answer(C, COMMAND_R2000_ERROR_REPORT, CMD_EXE_SUCCESS, wbuf, sizeof(wbuf));
+}
+
+#define MAC_ERR_MODULE_NOT_FOUND	0x0801
+int r2000_error_check(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	uint32_t mac_err = 0;
 	if (read_mac_register(A, MAC_ERROR, &mac_err) < 0) {
-		log_msg("r2000_error_check error");
-		return -1;
+		log_msg("%s: read_mac_register error, >>>>> reseting R2000 <<<<<", __FUNCTION__);
+		r2000_control_command(A, R2000_SOFTRESET);
+
+		if (r2000_control_command(A, R2000_GET_SN) < 0) {
+			log_msg("R2000 not found");
+			_r2000_error_report(C, S->cur_ant, MAC_ERR_MODULE_NOT_FOUND);
+			return -1;
+		}
 	}
 
 	if (mac_err) {
 		log_msg(">>>>> mac_err = 0x%08X <<<<<", mac_err);
-#if 0
-		if (mac_err == 0x0111		/* system is corrupted */
-			|| mac_err == 0x0114	/* system is corrupted */
-			|| mac_err == 0x0601	/* hardware problems or errant Indy Firmware code */
-			|| mac_err == 0x0602	/* hardware problems */
-			|| mac_err == 0x0603	/* system is corrupted */
-			|| mac_err == 0xB4C8	/* tag write error */
-			) {
-			log_msg(">>>>> reseting R2000 <<<<<");
-			r2000_control_command(A, R2000_SOFTRESET);
+		if (A->r2000_error_log) {
+			_r2000_error_report(C, S->cur_ant, mac_err);
 		}
-#else
+		
 		if (mac_err != 0x0309 && mac_err != 0x0316) {	/* 没接天线也报 0x0309 故不能复位 */
 			log_msg(">>>>> reseting R2000 <<<<<");
-			r2000_control_command(A, R2000_SOFTRESET);			
+			r2000_control_command(A, R2000_SOFTRESET);
+
+			if (r2000_control_command(A, R2000_GET_SN) < 0) {
+				log_msg("R2000 not found");
+				_r2000_error_report(C, S->cur_ant, MAC_ERR_MODULE_NOT_FOUND);
+				return -1;
+			}
 		}
-#endif
 	}
 
 	return 0;
@@ -264,7 +279,7 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		pkt_len = sizeof(cmd_end) - sizeof(*pcmn);
 		rs232_read(A->fd, (uint8_t *)&cmd_end+sizeof(*pcmn), pkt_len);
 		log_msg("COMMAND END");
-		r2000_error_check(A);
+		r2000_error_check(C, S, A);
 
 		switch (S->work_status) {
 		case WS_READ_EPC_FIXED:
@@ -623,7 +638,7 @@ int r2000_get_ant_rfpower(ap_connect_t *A, uint32_t *rfpower)
 
 int r2000_tag_read(tag_param_t *T, ap_connect_t *A)
 {
-	r2000_error_check(A);
+	//r2000_error_check(A);
 	uint32_t pwd = (T->access_pwd[0] << 24) |
 		(T->access_pwd[1] << 16) |
 		(T->access_pwd[2] << 8) |
@@ -653,7 +668,7 @@ int r2000_tag_write(tag_param_t *T, ap_connect_t *A)
 	log_msg("18K6C_WRITE: bank = %d, access_offset = %d, access_wordnum = %d", 
 		T->access_bank, T->access_offset, T->access_wordnum);
 #endif
-	r2000_error_check(A);
+	//r2000_error_check(A);
 #if 0
 	uint32_t reg_data;
 	if (read_mac_register(A, HST_TAGACC_DESC_CFG, &reg_data) < 0)
@@ -863,7 +878,10 @@ uint32_t r2000_oem_read(ap_connect_t *A, uint16_t addr)
 int r2000_check_freq_std(system_param_t *S, ap_connect_t *A)
 {
 	uint32_t plldivmult;
-	read_mac_register(A, HST_RFTC_FRQCH_DESC_PLLDIVMULT, &plldivmult);
+	if (read_mac_register(A, HST_RFTC_FRQCH_DESC_PLLDIVMULT, &plldivmult) < 0) {		
+		log_msg("%s: read_mac_register error", __FUNCTION__);
+		return -1;
+	}
 
 	uint8_t div = (plldivmult & 0x00FF0000) >> 16;
 	log_msg("div = 0x%02X", div);
@@ -880,23 +898,6 @@ int r2000_check_freq_std(system_param_t *S, ap_connect_t *A)
 		log_msg("unkown frequency standard, set freq_std to GB");
 		S->freq_std = FREQ_STD_GB;
 	}
-
-#if 0
-	int i;
-	for (i = 0; i < 5; i++) {
-		write_mac_register(A, HST_RFTC_FRQCH_SEL, i);
-		uint32_t cfg, plldivmult, plldacctl;
-		read_mac_register(A, HST_RFTC_FRQCH_CFG, &cfg);
-		read_mac_register(A, HST_RFTC_FRQCH_DESC_PLLDIVMULT, &plldivmult);
-		read_mac_register(A, HST_RFTC_FRQCH_DESC_PLLDACCTL, &plldacctl);
-		log_msg("cfg = %08X, plldivmult = %08X, plldacctl = %08X", 
-			cfg, plldivmult, plldacctl);
-	}
-
-	log_msg("0xBC = %08X", r2000_oem_read(A, 0xBC));
-	log_msg("0xBD = %08X", r2000_oem_read(A, 0xBD));
-	log_msg("0xBE = %08X", r2000_oem_read(A, 0xBE));
-#endif
 
 	return 0;
 }

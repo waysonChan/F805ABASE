@@ -17,6 +17,7 @@
 #define COMMAND_TIME_MAN_BASE				0xB0	/* 时间操作指令集 */
 #define COMMAND_EXTEND_BOARD_BASE			0xC0	/* 扩展板操作指令集 */
 #define COMMAND_DATA_CENTER_BASE			0xD0	/* 保留部分 */
+#define COMMAND_R2000_SPECIFIC_BASE			0xE0	/* R2000操作指令集 */
 
 /*---------------------------------------------------------------------
  *	系统控制指令集，子类型定义
@@ -119,5 +120,12 @@
  *	数据中心
  *--------------------------------------------------------------------*/
 #define COMMAND_RECV_TAG_CONFIRM			0xD0	/* 接收标签确认指令 */
+
+/*---------------------------------------------------------------------
+ *	R2000 相关指令
+ *--------------------------------------------------------------------*/
+#define COMMAND_R2000_LOG_ENABLE			0xE0	/* 配置日志功能 */
+#define COMMAND_R2000_ERROR_REPORT			0xE1	/* R2000错误上报指令 */
+#define COMMAND_R2000_FW_UPDATE				0xE2	/* R2000模块程序升级 */
 
 #endif	/* _COMMAND_DEF_H */

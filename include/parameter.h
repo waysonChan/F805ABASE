@@ -54,6 +54,7 @@
 #define WS_READ_USER			7	/* 读用户区 */
 #define WS_WRITE_USER			8	/* 读用户区 */
 #define WS_READ_EPC_FIXED_WEB		9	/* B/S固定天线读EPC */
+#define WS_UPGRADE			10	/* 固件升级 */
 
 /*---------------------------------------------------------------------
  *	标签操作相关参数

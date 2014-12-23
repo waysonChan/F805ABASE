@@ -97,6 +97,7 @@ int command_answer(r2h_connect_t *C, uint8_t cmd_id, uint8_t result,
 	case COMMAND_TRANSMIT_CONTROL_BASE:
 	case COMMAND_TIME_MAN_BASE:
 	case COMMAND_EXTEND_BOARD_BASE:
+	case COMMAND_R2000_SPECIFIC_BASE:
 		_reader_operate_afc(C, cmd_id, result, buf, sz);
 		break;
 	case COMMAND_18K6C_MAN_BASE:

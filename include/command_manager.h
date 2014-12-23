@@ -41,6 +41,7 @@ int trans_control_init(void);
 int epc_18k6c_init(void);
 int extend_board_init(void);
 int data_center_init(void);
+int r2000_specific_init(void);
 
 uint8_t stop_read_tag(system_param_t *S, ap_connect_t *A);
 
