@@ -190,8 +190,11 @@ int write_mac_register(ap_connect_t *A, uint16_t reg_addr, uint32_t reg_data)
 	return rs232_write(A->fd, (uint8_t *)&request, sizeof(request));
 }
 
-static void _r2000_error_report(r2h_connect_t *C, uint8_t ant_index, uint32_t mac_err)
+static void _r2000_error_report(r2h_connect_t *C, uint8_t ant_index, uint32_t mac_err, bool log_enable)
 {
+	if (!log_enable)
+		return;
+
 	uint8_t wbuf[3] = {0};
 	wbuf[0] = ant_index;
 	wbuf[1] = mac_err >> 8;
@@ -210,16 +213,14 @@ int r2000_error_check(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 
 		if (r2000_control_command(A, R2000_GET_SN) < 0) {
 			log_msg("R2000 not found");
-			_r2000_error_report(C, S->cur_ant, MAC_ERR_MODULE_NOT_FOUND);
+			_r2000_error_report(C, S->cur_ant, MAC_ERR_MODULE_NOT_FOUND, A->r2000_error_log);
 			return -1;
 		}
 	}
 
 	if (mac_err) {
 		log_msg(">>>>> mac_err = 0x%08X <<<<<", mac_err);
-		if (A->r2000_error_log) {
-			_r2000_error_report(C, S->cur_ant, mac_err);
-		}
+		_r2000_error_report(C, S->cur_ant, mac_err, A->r2000_error_log);
 		
 		if (mac_err != 0x0309 && mac_err != 0x0316) {	/* 没接天线也报 0x0309 故不能复位 */
 			log_msg(">>>>> reseting R2000 <<<<<");
@@ -227,7 +228,7 @@ int r2000_error_check(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 
 			if (r2000_control_command(A, R2000_GET_SN) < 0) {
 				log_msg("R2000 not found");
-				_r2000_error_report(C, S->cur_ant, MAC_ERR_MODULE_NOT_FOUND);
+				_r2000_error_report(C, S->cur_ant, MAC_ERR_MODULE_NOT_FOUND, A->r2000_error_log);
 				return -1;
 			}
 		}

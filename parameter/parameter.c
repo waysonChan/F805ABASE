@@ -263,7 +263,8 @@ system_param_t *sys_param_new(void)
 	cfg_get_eth0(&S->eth0);
 	cfg_get_pre_cfg(&S->pre_cfg);
 
-	memcpy(S->sysinfo.mcu_swrev, "1.40", sizeof("1.40"));
+	char *sw_ver = "1.4.03";
+	strncpy(S->sysinfo.mcu_swrev, sw_ver, strlen(sw_ver));
 
 	/* ≈‰÷√ eth0 */
 	uint8_t mac[6];
