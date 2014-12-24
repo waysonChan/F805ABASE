@@ -656,7 +656,7 @@ int cfg_set_pre_cfg(pre_cfg_t *pre_cfg)
 	if (s) {
 		config_setting_set_int(s, pre_cfg->wg_len);
 	}
-
+#if WIEGAND_CFG_ENABLE
 	s = config_lookup(&cfg, "pre_cfg.wg_pulse_width");
 	if (s) {
 		config_setting_set_int(s, pre_cfg->wg_pulse_width);
@@ -666,7 +666,7 @@ int cfg_set_pre_cfg(pre_cfg_t *pre_cfg)
 	if (s) {
 		config_setting_set_int(s, pre_cfg->wg_pulse_periods);
 	}
-
+#endif
 	s = config_lookup(&cfg, "pre_cfg.tid_len");
 	if (s) {
 		config_setting_set_int(s, pre_cfg->tid_len);
