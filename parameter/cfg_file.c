@@ -581,8 +581,10 @@ int cfg_get_pre_cfg(pre_cfg_t *pre_cfg)
 		&& config_setting_lookup_int(s, "dev_type", &pre_cfg->dev_type)
 		&& config_setting_lookup_int(s, "wg_start", &pre_cfg->wg_start)
 		&& config_setting_lookup_int(s, "wg_len", &pre_cfg->wg_len)
+#if WIEGAND_CFG_ENABLE
 		&& config_setting_lookup_int(s, "wg_pulse_width", &pre_cfg->wg_pulse_width)
 		&& config_setting_lookup_int(s, "wg_pulse_periods", &pre_cfg->wg_pulse_periods)
+#endif
 		&& config_setting_lookup_int(s, "tid_len", &pre_cfg->tid_len)
 		&& config_setting_lookup_int(s, "hop_freq_enable", &pre_cfg->hop_freq_enable)
 		)) {

@@ -32,11 +32,11 @@ int wiegand_init(r2h_connect_t *C, int pulse_width)
 		log_ret("wiegand_init error");
 		return -1;
 	}
-
+#if WIEGAND_CFG_ENABLE
 	if (ioctl(C->wg_fd, PULSE_WIDTH_CMD, pulse_width * 100) < 0) {
 		log_ret("wiegand_init: ioctl error");
 		return -1;
 	}
-
+#endif
 	return 0;
 }

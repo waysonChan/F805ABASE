@@ -10,5 +10,6 @@
 
 #define DEBUG			1
 #define CHINA_FREQSTAND		1
+#define WIEGAND_CFG_ENABLE	0
 
 #endif /* _CONFIG_H */
