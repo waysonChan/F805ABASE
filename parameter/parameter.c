@@ -302,6 +302,12 @@ system_param_t *sys_param_new(void)
 	cfg_get_eth0(&S->eth0);
 	cfg_get_pre_cfg(&S->pre_cfg);
 
+	if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
+		system("touch /f806/gprs-enable");
+	} else {
+		system("rm -f /f806/gprs-enable");
+	}
+
 	char *sw_ver = "1.4.03";
 	strncpy(S->sysinfo.mcu_swrev, sw_ver, strlen(sw_ver));
 
