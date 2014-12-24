@@ -299,13 +299,16 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				continue;
 			}
 
-			usleep(15000);	/* TODO 发送间隔时间 */
+			//usleep(15000);	/* TODO 发送间隔时间 */
 
 			if (S->pre_cfg.wg_len == WG_LEN_34) {
 				wiegand_send(C, ptr+S->pre_cfg.wg_start, 4);
 			} else {
 				wiegand_send(C, ptr+S->pre_cfg.wg_start, 3);
 			}
+
+			tag_report_list_del(tag_report);
+			break;	/* 韦根一次只发一个tag */
 		} else if (A->tag_report.filter_enable) {
 			_finally_tag_send(C, S, A, p);
 		}
