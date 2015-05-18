@@ -308,7 +308,7 @@ system_param_t *sys_param_new(void)
 		system("rm -f /f806/gprs-enable");
 	}
 
-	char *sw_ver = "1.4.03";
+	char *sw_ver = "1.4.05";
 	strncpy(S->sysinfo.mcu_swrev, sw_ver, strlen(sw_ver));
 
 	/* ≈‰÷√ eth0 */
