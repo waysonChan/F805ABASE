@@ -84,9 +84,7 @@ static int r2h_usb_open(r2h_connect_t *C, int baud_rate)
 
 static int r2h_usb_close_client(r2h_connect_t *C)
 {
-	rs232_flush(C->r2h[R2H_USB].fd);
 	close(C->r2h[R2H_USB].fd);
-
 	return r2h_usb_open(C, R2H_USB_BAUD_RATE);
 }
 

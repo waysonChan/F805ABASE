@@ -104,8 +104,10 @@ static int r2h_tcp_open(r2h_connect_t *C, int tcp_port)
 }
 
 static int r2h_tcp_close_client(r2h_connect_t *C)
-{	
-	return close(C->r2h[R2H_TCP].fd);
+{
+	close(C->r2h[R2H_TCP].fd);
+	C->r2h[R2H_TCP].fd = -1;
+	return 0;
 }
 
 int r2h_tcp_accept(r2h_connect_t *C)

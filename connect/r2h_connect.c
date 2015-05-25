@@ -29,7 +29,6 @@ int r2h_connect_close_client(r2h_connect_t *C)
 
 	if (C->conn_type != R2H_NONE) {
 		C->r2h[C->conn_type].close_client(C);
-		C->r2h[C->conn_type].fd = -1;
 		C->conn_type = R2H_NONE;
 	}
 
