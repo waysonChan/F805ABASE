@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 			FD_SET(C->r2h[R2H_GPRS].fd, &writeset);
 		}
 
-		int err = select(maxfd+1, &readset, NULL, NULL, NULL);
+		int err = select(maxfd+1, &readset, &writeset, NULL, NULL);
 		if (err < 0) {
 			log_ret("select error");
 		} else if (err == 0) {
