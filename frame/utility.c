@@ -1,6 +1,7 @@
 #include "utility.h"
 #include "r2h_frame.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 inline int msec_between(struct timeval start, struct timeval end)
@@ -46,6 +47,40 @@ size_t replace_keyword(uint8_t *buf, size_t sz)
 
 	memcpy(buf, tmp_buf, len);/* Ìæ»» buffer */
 	return len;
+}
+
+int set_gprs_apn(const char *new_apn)
+{
+	char line[1024] = {0};
+
+	FILE *rfp = fopen("/etc/ppp/gprs-connect-chat", "r");
+	if (rfp == NULL) {
+		log_msg("fopen error");
+		return -1;
+	}
+
+	FILE *wfp = fopen("tmp", "w+");
+	if (rfp == NULL) {
+		log_msg("fopen error");
+		return -1;
+	}
+
+	while (fgets(line, sizeof(line), rfp) != NULL) {
+		char *ret = strstr(line, "AT+CGDCONT=1");
+		if (ret) {
+			log_msg("origin APN: %s", line);
+			char rep_line[256] = {0};
+			snprintf(rep_line, sizeof(rep_line), "OK AT+CGDCONT=1,\"IP\",\"%s\"\n", new_apn);
+			fputs(rep_line, wfp);
+		} else {
+			fputs(line, wfp);
+		}
+	}
+
+	fclose(rfp);
+	fclose(wfp);
+	rename("tmp", "/etc/ppp/gprs-connect-chat");
+	return 0;
 }
 
 /*---------------------------------------------------------------------

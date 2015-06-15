@@ -89,6 +89,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			
 			memcpy(S->data_center.apn, cmd_param+3, len);
 			cfg_set_data_center(&S->data_center);
+			set_gprs_apn(S->data_center.apn);
 			break;
 		case 123:	/* dsc username */
 			if (len > DSC_USERNAME_LEN) {

@@ -8,6 +8,7 @@
 inline int msec_between(struct timeval start, struct timeval end);
 inline int convert_dec(uint8_t val);
 inline uint8_t convert_hex(int val);
+int set_gprs_apn(const char *new_apn);
 size_t replace_keyword(uint8_t *buf, size_t sz);
 inline uint16_t crc_16_byte(uint8_t byte, uint16_t last_crc);
 inline uint16_t crc_16_buf(const uint8_t *data, uint16_t len);
