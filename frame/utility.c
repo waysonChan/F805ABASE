@@ -59,7 +59,7 @@ int set_gprs_apn(const char *new_apn)
 		return -1;
 	}
 
-	FILE *wfp = fopen("tmp", "w+");
+	FILE *wfp = fopen("/f806/tmp", "w+");
 	if (rfp == NULL) {
 		log_msg("fopen error");
 		return -1;
@@ -79,7 +79,7 @@ int set_gprs_apn(const char *new_apn)
 
 	fclose(rfp);
 	fclose(wfp);
-	rename("tmp", "/etc/ppp/gprs-connect-chat");
+	rename("/f806/tmp", "/etc/ppp/gprs-connect-chat");
 	return 0;
 }
 
