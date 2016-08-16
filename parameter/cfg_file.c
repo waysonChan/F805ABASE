@@ -328,7 +328,6 @@ int cfg_get_ant(antenna_t *ant, int ant_index)
 		err = -1;
 		goto out;
 	}
-
 	switch (ant_index) {
 	case 1:
 		s = config_lookup(&cfg, "ant1");

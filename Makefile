@@ -38,7 +38,7 @@ obj-y += rf_ctrl/
 all : 
 	make -C ./ -f $(TOPDIR)/Makefile.build
 	$(CC) $(LDFLAGS) -o $(TARGET) built-in.o
-
+	cp $(TARGET) /var/lib/tftpboot
 
 clean:
 	rm -f $(shell find -name "*.o")

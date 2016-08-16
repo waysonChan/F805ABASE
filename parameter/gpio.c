@@ -12,6 +12,7 @@
 #include <sys/time.h>
 
 static int btns_fd;
+extern int IO_VAL[2];
 static gpio_t gpio[] = {
 	/* LED1_GREEN */
 	{
@@ -140,7 +141,6 @@ int set_active_antenna(system_param_t *S, int ant_index)
 			ant_index = 1;
 		}
 	}
-	
 	switch (ant_index) {
 	case 1:
 		err1 = set_gpio_status(RF_ANTE1, 1);
@@ -322,11 +322,16 @@ int beep(beep_action_e action)
 
 int get_btns_status(uint8_t *btns_val)
 {
-	if (read(btns_fd, btns_val, MAX_GPI_NUM) < 0) {
+/*	if (read(btns_fd, btns_val, MAX_GPI_NUM) < 0) {
 		log_ret("read error");
 		return -1;
 	}
-
+*/
+/*
+	btns_val[0] = IO_VAL[0];
+	btns_val[1] = IO_VAL[1];
+	
+*/
 	return 0;
 }
 
@@ -470,5 +475,5 @@ int gpio_init(void)
 		return -1;
 	}
 	
-	return 0;
+	return btns_fd;
 }

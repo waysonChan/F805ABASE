@@ -3,12 +3,14 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define TS_HEADER_LEN	2
 #define TS_TAG_DATA_LEN	26
 #define TS_TAG_MAX_NUM	5000
 
 static FILE *fp = NULL;
+
 static uint16_t tag_storage_total = 0;
 
 typedef struct {
@@ -64,9 +66,9 @@ int tag_storage_fflush(void)
 
 int tag_storage_read(tag_t *ptag)
 {
-	if (tag_storage_total == 0)
+	if (tag_storage_total == 0){
 		return -1;
-
+	}
 	fseek(fp, TS_HEADER_LEN + (tag_storage_total-1)*sizeof(tag_storage_t), SEEK_SET);
 
 	tag_storage_t ts;
@@ -87,7 +89,7 @@ int tag_storage_read(tag_t *ptag)
 int tag_storage_delete(bool all)
 {
 	if (tag_storage_total == 0) {
-		log_msg("tag_storage_delete: tag_storage_total already is 0");
+		//log_msg("tag_storage_delete: tag_storage_total already is 0");
 		return -1;
 	}
 
@@ -105,7 +107,7 @@ int tag_storage_delete(bool all)
 		tag_storage_total++;	/* 更新标签数失败,恢复标签数 */
 		return -1;
 	} else {
-		//log_msg("tag_storage_delete: tag_storage_total = %d", tag_storage_total);
+		log_msg("tag_storage_delete: tag_storage_total = %d", tag_storage_total);
 		if (tag_storage_total == 0) {
 			tag_storage_fflush();	/* 这不是很好的策略 */
 		}
@@ -128,7 +130,7 @@ int tag_storage_init(void)
 		if (sz != 1) {
 			log_msg("fread error");
 			return -1;
-		} else {
+		}else {
 			log_msg("tag_storage_init: tag_storage_total = %d", tag_storage_total);
 		}
 	} else {
@@ -152,6 +154,5 @@ int tag_storage_init(void)
 			return -1;
 		}
 	}
-
 	return 0;
 }

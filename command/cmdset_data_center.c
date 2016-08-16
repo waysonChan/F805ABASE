@@ -38,14 +38,60 @@ static void ec_recv_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_
 	} else {
 		tag_storage_delete(false);
 	}
-
-	gprs_tag_send_header(C, S, A);
+	if(S->work_status != WS_STOP)
+		gprs_tag_send_header(C, S, A);
 }
+
+
+
+
+static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	int i = 0;
+	bool flag = false;
+	
+	wifi_priv_t *wifi_priv = &C->wifi_priv;
+	if (A->tag_report.filter_enable == false
+		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
+		return;
+	
+	if(C->recv.frame.cmd_id == 0xD1){//过滤心跳包
+		for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
+			if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
+				continue;//卡号相同
+			}else{
+				flag = true;
+			}
+		}
+		if(!flag){
+			wifi_priv->wifi_fail_cnt = 0;
+			wifi_priv->wifi_wait_flag = false;
+			if (wifi_priv->wifi_send_type == WIFI_SEND_TYPE_RAM) {
+				;
+				//tag_report_list_del(&A->tag_report);
+			} else {
+				tag_storage_delete(false);
+			}
+			return;
+		}
+		wifi_tag_send_header(C, S, A);
+	}
+}
+
+
+
+
 
 static command_t cmd_recv_tag_confirm = {
 	.cmd_id = COMMAND_RECV_TAG_CONFIRM,
 	.execute = ec_recv_tag_confirm,
 };
+
+static command_t cmd_recv_tag_confirm_wifi = {
+	.cmd_id = COMMAND_RECV_TAG_CONFIRM_WIFI,
+	.execute = ec_recv_tag_confirm_wifi,
+};
+
 
 /*
  * 注册指令集和属于此指令集的所有指令
@@ -54,5 +100,6 @@ int data_center_init(void)
 {
 	int err = command_set_register(&cmdset_data_center);
 	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm);
+	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm_wifi);
 	return err;
 }

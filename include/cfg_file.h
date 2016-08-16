@@ -112,6 +112,14 @@ typedef struct {
 	struct itimerspec pulse_its;	/* Âö³å¿í¶È¶¨Ê±Æ÷ */
 } gpo_t;
 
+
+typedef struct {
+	int fd;
+	int gpio1_val;
+	int gpio2_val;
+} gpio_desc;
+
+
 #define ANT_IDX_POLL		0x00
 #define ANT_IDX_1		0x01
 #define ANT_IDX_2		0x02

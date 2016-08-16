@@ -17,6 +17,7 @@ LIST_HEAD(tag_report_list);
 #define MAX_TAG_NUM_IN_RAM	5000
 int tag_report_list_add(tag_t *p, tag_report_t *tag_report)
 {
+
 	/* 1.存在性检查 */
 	struct list_head *l;
 	for (l = tag_report_list.next; l != &tag_report_list; l = l->next) {
@@ -55,10 +56,11 @@ int tag_report_list_add(tag_t *p, tag_report_t *tag_report)
 	/* 4.添加链表 */
 	list_add_tail(&new_tag->list, &tag_report_list);
 
+
 	/* 5.增加计数 */
 	tag_report->tag_cnt++;
 
-	return 0;
+	return 1;
 }
 
 /* 链表头删除 */
@@ -146,6 +148,29 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 		return -1;
 	}
 
+	if (S->pre_cfg.work_mode == WORK_MODE_TRIGGER) {
+		switch (S->pre_cfg.upload_mode) {
+		case UPLOAD_MODE_WIEGAND:
+			return tag_report_list_add(ptag, &A->tag_report);
+		case UPLOAD_MODE_RS232:
+			C->conn_type = R2H_RS232;
+			break;
+		case UPLOAD_MODE_RS485:
+			C->conn_type = R2H_RS485;
+			break;
+		case UPLOAD_MODE_WIFI:
+			C->conn_type = R2H_WIFI;
+			break;
+		case UPLOAD_MODE_GPRS:
+			C->conn_type = R2H_GPRS;
+			break;
+		default:
+			C->conn_type = R2H_NONE;
+		}
+	}
+
+
+
 	/* 2.已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
@@ -198,6 +223,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 		return -1;
 	}
 
+
 	/* 2.I802S只能用1号天线读卡 */
 	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
 		|| ((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT4)) {
@@ -205,8 +231,15 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	}
 
 	/* 3.(过滤模式)处理 filter_enable */
-	if (A->tag_report.filter_enable)
-		return tag_report_list_add(ptag, &A->tag_report);
+	if (A->tag_report.filter_enable){
+		if(tag_report_list_add(ptag, &A->tag_report) == 1){
+			ptag->has_append_time = false;
+			return _finally_tag_send(C, S, A, ptag);
+		}else{
+			return 0;
+		}
+	}
+
 
 	/* 4. 为WIFI和GPRS加上时间 */
 	ptag->has_append_time = false;
@@ -217,7 +250,6 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 static int _tag_storage_write_all(tag_report_t *tag_report)
 {
 	struct list_head *l;
-
 	for (l = tag_report_list.next; l != &tag_report_list; l = l->next) {
 		tag_t *p = list_entry(l, tag_t, list);
 		_append_tag_time(p);
@@ -267,6 +299,48 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	return 0;
 }
 
+
+int wifi_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	tag_report_t *tag_report = &A->tag_report;
+	wifi_priv_t *wifi_priv = &C->wifi_priv;
+
+	/* 1.处理链表tag */
+	if (!list_empty(&tag_report_list)) {
+		//struct list_head *l = tag_report_list.next;
+		//tag_t *p = list_entry(l, tag_t, list);
+		if (wifi_priv->wifi_wait_flag && (wifi_priv->wifi_fail_cnt++ >= MAX_SEND_FAIL_TIMES)) {
+			/* 将链表中tag写入文件 */
+			wifi_priv->wifi_fail_cnt = 0;
+			wifi_priv->wifi_wait_flag = false;
+			return _tag_storage_write_all(tag_report);
+		} else {
+			/* 发送链表头的tag */
+			wifi_priv->wifi_wait_flag = true;
+			wifi_priv->wifi_send_type = WIFI_SEND_TYPE_RAM;
+			//return _finally_tag_send(C, S, A, p);
+			return 0;
+		}
+	} else {
+		/* 2.处理文件tag */
+		tag_t tag;
+		if (tag_storage_read(&tag) < 0) {
+			//log_msg("tag_storage_read error!");
+			return -1;
+		} else {
+			tag.has_append_time = true;	/* 必需 */
+			wifi_priv->wifi_wait_flag = true;
+			wifi_priv->wifi_send_type = WIFI_SEND_TYPE_NAND;
+			return _finally_tag_send(C, S, A, &tag);
+			//return 0;
+		}
+	}
+
+	return 0;
+}
+
+
+
 int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	uint64_t num_exp;
@@ -280,10 +354,21 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		|| (C->conn_type == R2H_NONE 
 		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS))) {
-		return gprs_tag_send_header(C, S, A);
+		gprs_tag_send_header(C, S, A);
 	}
 
+
+	if ((S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE) && 
+		((C->conn_type == R2H_WIFI && S->work_status != WS_STOP)
+		|| (C->conn_type == R2H_NONE 
+		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
+		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI))) {
+		wifi_tag_send_header(C, S, A);
+	}	
+
+
 	tag_report_t *tag_report = &A->tag_report;
+
 
 	while (!list_empty(&tag_report_list)) {
 		/* 1.获取链表头tag */
@@ -305,12 +390,16 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			tag_report_list_del(tag_report);
 			break;	/* 韦根一次只发一个tag */
 		} else if (A->tag_report.filter_enable) {
-			_finally_tag_send(C, S, A, p);
+			;
+			//_finally_tag_send(C, S, A, p);
 		}
 
 		/* 3.删除链表头tag */
 		tag_report_list_del(tag_report);
 	}
+
+	
+
 
 	return 0;
 }
@@ -361,3 +450,76 @@ int report_tag_reset(tag_report_t *tag_report)
 	}
 	return 0;
 }
+
+
+
+
+
+
+int heartbeat_timer_set(system_param_t *S, int s)
+{
+	struct itimerspec its = {
+		.it_interval.tv_sec = s,
+		.it_interval.tv_nsec = 0,
+		.it_value.tv_sec = s,
+		.it_value.tv_nsec = 0,
+	};
+
+	if (timerfd_settime(S->heartbeat_timer, 0, &its, NULL) < 0) {
+		log_ret("timerfd_settime");
+		return -1;
+	}
+
+	S->heartbeat_its = its;
+	return 0;
+}
+
+
+int heartbeat_timer_int(system_param_t *S)
+{
+	S->heartbeat_timer = timerfd_create(CLOCK_REALTIME, 0);
+	if (S->heartbeat_timer < 0) {
+		log_ret("timerfd_create error");
+		return -1;
+	} 
+	
+	bzero(&S->heartbeat_its, sizeof(struct itimerspec));
+	heartbeat_timer_set(S,5);
+	if (timerfd_settime(S->heartbeat_timer, 0, &S->heartbeat_its, NULL) < 0) {
+		log_ret("timerfd_settime error");
+		close(S->heartbeat_timer);
+		return -1;
+	}else{
+		log_msg("heartbeat_timer_int successful\n");
+	}
+
+	return 0;
+}
+
+
+
+
+
+int heartbeat_timer_trigger(r2h_connect_t *C, system_param_t *S )
+{
+	uint64_t num_exp;
+	int temp_conn_type;
+	if (read(S->heartbeat_timer, &num_exp, sizeof(uint64_t)) != sizeof(uint64_t)) {
+		log_ret("S->heartbeat_timer_trigger read()");
+		return -1;
+	}
+	
+	//log_msg("COMMAND_TRANSMIT_CONTROL_HEARTBEAT \n");
+
+	temp_conn_type = C->conn_type;
+	C->conn_type = R2H_WIFI;
+	command_answer(C, COMMAND_TRANSMIT_CONTROL_HEARTBEAT, CMD_EXE_SUCCESS, NULL, 0);
+	C->conn_type = temp_conn_type;
+	return 0;
+}
+
+
+
+
+
+

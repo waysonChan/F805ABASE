@@ -143,7 +143,10 @@ typedef struct {
 	int work_status;			/* 读写器工作状态 */
 	int work_status_timer;
 	struct itimerspec work_status_its;
-	
+
+	int heartbeat_timer;
+	struct itimerspec heartbeat_its;
+
 	pre_cfg_t pre_cfg;			/* 预置工作参数 */
 	sysinfo_t sysinfo;
 	rs232_t rs232;
@@ -165,6 +168,8 @@ typedef struct {
 	/* 跳频表 */
 	int freq_std;
 	uint8_t freq_table[FREQ_MAP_LEN];
+
+	gpio_desc gpio_dece;
 } system_param_t;
 
 extern const uint32_t baud_table[6];

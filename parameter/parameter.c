@@ -282,18 +282,20 @@ int work_status_timer_set(system_param_t *S, int ms)
 	return 0;
 }
 
+
 /*---------------------------------------------------------------------
  * 初始化参数表
  *--------------------------------------------------------------------*/
 system_param_t *sys_param_new(void)
 {
+	
 	system_param_t *S = malloc(sizeof(system_param_t));
 	if (NULL == S) {
 		log_quit("malloc error");
 	}
 	memset(S, 0, sizeof(system_param_t));
 
-	if (gpio_init() < 0)
+	if ((S->gpio_dece.fd = gpio_init()) < 0)
 		log_msg("gpio_init error");
 
 	cfg_get_rs232(&S->rs232);
@@ -308,7 +310,7 @@ system_param_t *sys_param_new(void)
 		system("rm -f /f806/gprs-enable");
 	}
 
-	char *sw_ver = "1.4.10";
+	char *sw_ver = "1.4.11";
 	strncpy(S->sysinfo.mcu_swrev, sw_ver, strlen(sw_ver));
 
 	/* 配置 eth0 */
@@ -339,6 +341,7 @@ system_param_t *sys_param_new(void)
 	}
 	S->cur_ant = ant_index;
 	gettimeofday(&S->last_ant_change_time, NULL);
+
 
 	/* 工作状态 */
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) {
@@ -374,6 +377,27 @@ system_param_t *sys_param_new(void)
 		}
 	}
 
+	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER) {
+		switch (S->pre_cfg.oper_mode) {
+		case OPERATE_READ_EPC:
+		case OPERATE_READ_TID:
+			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+				S->cur_ant = S->pre_cfg.ant_idx;
+			}		
+			break;
+		case OPERATE_READ_USER:
+			/* 读用户区不支持轮询模式 */
+			if (S->pre_cfg.ant_idx != 0) {
+				S->cur_ant = S->pre_cfg.ant_idx;
+			} else {
+				S->cur_ant = 1;
+			}
+			break;
+		default:
+			S->work_status = WS_STOP;
+			log_msg("invalid operate mode");
+		}
+	}
 	/* 天线指示灯 */
 	int i;
 	for (i = 0; i < ANTENNA_NUM; i++) {

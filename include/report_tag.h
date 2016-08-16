@@ -20,5 +20,9 @@ int tag_storage_read(tag_t *ptag);
 int tag_storage_delete(bool all);
 uint16_t tag_storage_get_cnt(void);
 int tag_storage_init(void);
+int heartbeat_timer_int(system_param_t *S);
+int heartbeat_timer_trigger(r2h_connect_t *C,system_param_t *S);
+int wifi_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
+
 
 #endif /* _REPORT_TAG_H */

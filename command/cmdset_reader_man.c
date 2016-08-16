@@ -191,6 +191,8 @@ static void ec_reader_man_io_input(r2h_connect_t *C, system_param_t *S, ap_conne
 		err = ERRCODE_OPT_UNKNOWERR;
 		goto out;
 	}
+	btns_val[0] = S->gpio_dece.gpio1_val;
+	btns_val[1] = S->gpio_dece.gpio2_val;
 	state = btns_val[0] | (btns_val[1] << 1);
 
 out:

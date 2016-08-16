@@ -53,6 +53,10 @@ typedef struct {
 #define GPRS_SEND_TYPE_RAM	1
 #define GPRS_SEND_TYPE_NAND	2
 
+#define WIFI_SEND_TYPE_RAM	1
+#define WIFI_SEND_TYPE_NAND	2
+
+
 typedef struct {
 	bool connected;
 	bool connect_in_progress;
@@ -63,6 +67,18 @@ typedef struct {
 	int gprs_fail_cnt;	/* 连续发送标签失败次数 */
 	int gprs_send_type;	/* 发送的标签在 RAM 还是 NAND */
 } gprs_priv_t;
+
+typedef struct {
+	bool connected;
+	bool connect_in_progress;
+	int tcp_port;
+	int wifi_timer;	
+	struct sockaddr_in server_addr;
+	bool wifi_wait_flag;
+	int wifi_fail_cnt;	
+	int wifi_send_type;	
+} wifi_priv_t;
+
 
 #define R2H_NONE	-1
 #define R2H_TCP		0
@@ -81,7 +97,9 @@ struct r2h_connect {
 	r2h_send_t send;
 	int conn_type;
 	int wg_fd;
+	int count;
 	gprs_priv_t gprs_priv;
+	wifi_priv_t wifi_priv;
 	struct sockaddr_in udp_client_addr;	/* UDP专用 */
 	r2h_t r2h[R2H_TOTAL];
 };

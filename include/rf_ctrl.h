@@ -37,4 +37,7 @@ int r2000_tag_deselect(ap_connect_t *A);
 int r2000_check_freq_std(system_param_t *S, ap_connect_t *A);
 int r2000_freq_config(system_param_t *S, ap_connect_t *A);
 
+int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
+
+
 #endif	/* _RF_CTRL_H */

@@ -8,6 +8,7 @@
 #include "report_tag.h"
 #include "gpio.h"
 #include "utility.h"
+#include <unistd.h>
 
 #include <signal.h>
 #include <string.h>
@@ -15,7 +16,8 @@
 
 int log_to_stderr = 0;
 
-int main(int argc, char *argv[])
+
+int main(int argc, char *argv[])  
 {
 	if (argc == 2 && !strcmp(argv[1], "-d")) {
 		log_to_stderr = 1;
@@ -24,7 +26,7 @@ int main(int argc, char *argv[])
 	system_param_t *S = sys_param_new();
 	r2h_connect_t *C = r2h_connect_new(S);
 	ap_connect_t *A = ap_connect_new(S);
-
+	heartbeat_timer_int(S);
 	command_init();
 	if (r2h_connect_init(C, S) < 0)
 		log_msg("r2h_connect_init error");
@@ -35,13 +37,15 @@ int main(int argc, char *argv[])
 		auto_read_tag(C, S, A);
 	}
 
+
 	while (1) {
 		int i, ret, maxfd = 0;
+		int temp_connect_type;
 		fd_set readset, writeset;
 		FD_ZERO(&readset);
 		FD_ZERO(&writeset);
 
-		maxfd = A->fd;
+		maxfd = A->fd;  
 		FD_SET(A->fd, &readset);
 
 		maxfd = MAX(maxfd, A->tag_report.filter_timer);
@@ -50,6 +54,9 @@ int main(int argc, char *argv[])
 		maxfd = MAX(maxfd, S->work_status_timer);
 		FD_SET(S->work_status_timer, &readset);
 
+		maxfd = MAX(maxfd, S->heartbeat_timer);
+		FD_SET(S->heartbeat_timer, &readset);
+	
 		if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
 			maxfd = MAX(maxfd, C->gprs_priv.gprs_timer);
 			FD_SET(C->gprs_priv.gprs_timer, &readset);
@@ -80,6 +87,9 @@ int main(int argc, char *argv[])
 			FD_SET(C->r2h[R2H_GPRS].fd, &writeset);
 		}
 
+
+		FD_SET(S->gpio_dece.fd,&readset);
+
 		int err = select(maxfd+1, &readset, &writeset, NULL, NULL);
 		if (err < 0) {
 			log_ret("select error");
@@ -109,6 +119,14 @@ int main(int argc, char *argv[])
 			r2h_gprs_timer_trigger(C);
 		}
 
+		if (FD_ISSET(S->gpio_dece.fd, &readset)) {
+			trigger_to_read_tag(C, S, A);
+		}
+
+		if (FD_ISSET(S->heartbeat_timer, &readset)) {
+			heartbeat_timer_trigger(C, S );
+		}
+
 		for (i = 0; i < GPO_NUMBER; i++) {
 			if (FD_ISSET(S->gpo[i].pulse_timer, &readset)) {
 				gpo_pulse_timer_trigger(i, S->gpo[i].pulse_timer);
@@ -124,10 +142,25 @@ int main(int argc, char *argv[])
 		
 		for (i = 0; i < R2H_TOTAL; i++) {
 			if (C->r2h[i].fd != -1 && FD_ISSET(C->r2h[i].fd, &readset)) {
-				//log_msg("i = %d, fd = %d", i, C->r2h[i].fd);
 				ret = r2h_connect_check_in(C, i);
-				if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
-					command_execute(C, S, A);
+				temp_connect_type = C->conn_type;
+				//log_msg("#########C->conn_type = %d########",C->conn_type);
+				if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI){
+					C->recv.rlen = ret;
+					while(C->recv.rlen){
+						if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
+							command_execute(C, S, A);
+						}else{
+							C->conn_type = temp_connect_type;
+						}
+					}
+					C->count = 0;
+				}else{
+					if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
+						command_execute(C, S, A);
+					}else{
+						C->conn_type = temp_connect_type;
+					}
 				}
 			}
 		}

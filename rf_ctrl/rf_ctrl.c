@@ -11,6 +11,7 @@
 #include "utility.h"
 #include "gpio.h"
 #include "report_tag.h"
+#include "command_manager.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -262,6 +263,7 @@ static int tag_user_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 
 	return 0;
 }
+
 
 int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
@@ -938,7 +940,7 @@ int r2000_freq_config(system_param_t *S, ap_connect_t *A)
 
 	rs232_flush(A->fd);
 
-	/* 关闭1通道之外的其他通道 */
+	/* 关闭1  通道之外的其他通道 */
 	for (i = 0; i < 50; i++) {
 		/* OEMCFGADDR_FREQCFG_CHAN_INFO - 0xBC */
 		write_mac_register(A, HST_OEM_ADDR, 0xBC + i*3);
@@ -995,3 +997,65 @@ int r2000_freq_config(system_param_t *S, ap_connect_t *A)
 	r2000_control_command(A, R2000_SOFTRESET);
 	return 0;
 }
+
+
+/* 触发读卡功能 */
+int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	unsigned char key_vals[2];
+	if(S->pre_cfg.work_mode != WORK_MODE_TRIGGER){
+		return -1;
+	}
+	if(read(S->gpio_dece.fd, key_vals, sizeof(key_vals)) < 0){
+		log_ret("trigger_to_read_tag read()\n");
+		return -1;
+	}
+	S->gpio_dece.gpio1_val = key_vals[0];
+	S->gpio_dece.gpio2_val = key_vals[1];
+	if((key_vals[0]==1) || (key_vals[1]==1)){//接入设备
+		if(S->work_status == WS_STOP)
+		{
+			switch (S->pre_cfg.oper_mode) {
+			case OPERATE_READ_EPC:
+				if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+					S->work_status = WS_READ_EPC_FIXED;
+					S->cur_ant = S->pre_cfg.ant_idx;
+				} else {
+					S->work_status = WS_READ_EPC_INTURN;
+				}
+				break;
+			case OPERATE_READ_TID:
+				if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+					S->work_status = WS_READ_TID_FIXED;
+					S->cur_ant = S->pre_cfg.ant_idx;
+				} else {
+					S->work_status = WS_READ_TID_INTURN;
+				}			
+				break;
+			case OPERATE_READ_USER:
+				/* 读用户区不支持轮询模式 */
+				if (S->pre_cfg.ant_idx != 0) {
+					S->cur_ant = S->pre_cfg.ant_idx;
+				} else {
+					S->cur_ant = 1;
+				}
+				S->work_status = WS_READ_USER;
+				break;
+			default:
+				S->work_status = WS_STOP;
+				log_msg("invalid operate mode");
+			}
+			if(r2000_error_check(C, S, A)<0)
+				log_msg("start error");
+			auto_read_tag(C, S, A);
+		}
+	}else{//拔出设备
+		if(S->work_status != WS_STOP){
+			stop_read_tag(S, A);
+			S->work_status = WS_STOP;
+		}
+	}
+	return 0;
+}
+
+

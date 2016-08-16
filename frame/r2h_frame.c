@@ -85,7 +85,7 @@ int r2h_frame_parse(r2h_connect_t *C, int result)
 	r2h_frame_t *F = &C->recv.frame;
 
 	if (result > 0) {
-		C->recv.rlen = result;
+		//C->recv.rlen = result;
 	} else if (result == 0 && 
 		(C->conn_type == R2H_TCP || C->conn_type == R2H_USB || C->conn_type == R2H_GPRS)) {
 		/* EOF */
@@ -101,7 +101,8 @@ int r2h_frame_parse(r2h_connect_t *C, int result)
 		goto out;
 	}
 
-	for (ptr=C->recv.rbuf; C->recv.rlen>0; C->recv.rlen--, ptr++) {
+	
+	for (ptr=&C->recv.rbuf[C->count]; C->recv.rlen>0; C->recv.rlen--, ptr++,C->count++) {
 		switch (*ptr) {
 		case FRAME_HEADER:
 			_r2h_frame_init(C);
@@ -143,7 +144,7 @@ int r2h_frame_parse(r2h_connect_t *C, int result)
 	}
 
 out:
-	C->recv.rlen = 0;
+	//C->recv.rlen = 0;
 	C->recv.frame.frame_state = FRAME_READY_STATE;
 	return FRAME_UNCOMPLETE;
 }
