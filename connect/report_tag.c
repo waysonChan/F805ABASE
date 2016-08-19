@@ -233,6 +233,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	/* 3.(过滤模式)处理 filter_enable */
 	if (A->tag_report.filter_enable){
 		if(tag_report_list_add(ptag, &A->tag_report) == 1){
+			log_msg("tag_report_list_add");
 			ptag->has_append_time = false;
 			return _finally_tag_send(C, S, A, ptag);
 		}else{

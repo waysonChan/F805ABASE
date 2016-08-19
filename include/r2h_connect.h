@@ -98,6 +98,7 @@ struct r2h_connect {
 	int conn_type;
 	int wg_fd;
 	int count;
+	bool flag;
 	gprs_priv_t gprs_priv;
 	wifi_priv_t wifi_priv;
 	struct sockaddr_in udp_client_addr;	/* UDP×¨ÓÃ */

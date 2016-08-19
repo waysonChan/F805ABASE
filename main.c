@@ -142,10 +142,11 @@ int main(int argc, char *argv[])
 		
 		for (i = 0; i < R2H_TOTAL; i++) {
 			if (C->r2h[i].fd != -1 && FD_ISSET(C->r2h[i].fd, &readset)) {
+				//log_msg("i = %d, fd = %d", i, C->r2h[i].fd);
 				ret = r2h_connect_check_in(C, i);
 				temp_connect_type = C->conn_type;
-				//log_msg("#########C->conn_type = %d########",C->conn_type);
-				if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI){
+				if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI && C->conn_type == R2H_WIFI){
+					C->flag = true;
 					C->recv.rlen = ret;
 					while(C->recv.rlen){
 						if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
@@ -154,8 +155,10 @@ int main(int argc, char *argv[])
 							C->conn_type = temp_connect_type;
 						}
 					}
+					C->flag = false;
 					C->count = 0;
 				}else{
+					C->flag = false;
 					if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
 						command_execute(C, S, A);
 					}else{
