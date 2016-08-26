@@ -103,6 +103,7 @@ struct r2h_connect {
 	char status[9];
 	int status_cnt;
 	bool status_flag;
+	char status_buf[10];
 	bool flag;
 	gprs_priv_t gprs_priv;
 	wifi_priv_t wifi_priv;

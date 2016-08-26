@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+
 #include <sys/time.h>
 #include <unistd.h>
 #include <sys/timerfd.h>
@@ -606,7 +607,7 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 				triger_status_read(buf);
 				send_triggerstatus(C,buf,sizeof(buf));
 			}else{
-				log_msg("triger_status.bin is empty.");
+				//log_msg("triger_status.bin is empty.");
 				return -1;
 			}
 		}
@@ -631,6 +632,14 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 void send_triggerstatus(r2h_connect_t *C,const void *buf, size_t sz)
 {
 	int temp_conn_type;
+	char *p ;
+	p = (char *)buf;
+	int i =0;
+	for(i=0;i<9;i++){
+		C->status_buf[i] = *p;
+		p++;
+		//log_msg("####buf[%d] = 0x%02x",i,*p);
+	}
 	temp_conn_type = C->conn_type;
 	C->conn_type = R2H_WIFI;
 	command_answer(C, COMMAND_TRANSMIT_CONTROL_TRIGGERSTATUS, CMD_EXE_SUCCESS, buf, sz);

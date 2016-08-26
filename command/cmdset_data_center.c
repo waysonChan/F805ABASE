@@ -88,11 +88,12 @@ static void ec_recv_tag_confirm_trigger_tstaus(r2h_connect_t *C, system_param_t 
 	if(C->recv.frame.cmd_id != 0xD2){
 		return ;
 	}else{
-		for(i = 0;i < C->recv.frame.param_len; i++){
-			if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
+		for(i = 0;i < C->recv.frame.param_len - 2; i++){
+			if(C->recv.frame.param_buf[i+1] == C->status_buf[i]){
 				continue;//相同
 			}else{
-				log_msg("Not The Same Status");
+				//log_msg("#########Not The Same Status############");
+
 				flag = true;
 				break;
 			}
@@ -100,6 +101,7 @@ static void ec_recv_tag_confirm_trigger_tstaus(r2h_connect_t *C, system_param_t 
 		if(!flag){
 			C->status_cnt = 0;
 			if(C->status_flag)//如果是从文件里发出来的
+				C->status_flag = false;
 				triger_status_delete(false);
 		}
 	}
