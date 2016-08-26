@@ -28,6 +28,7 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 	if (report_tag_init(&A->tag_report) < 0)
 		log_quit("report_tag_init error");
 
+
 	A->fd = rs232_init("/dev/ttyS6", 115200);
 	if (A->fd < 0)
 		log_quit("rs232_init error");

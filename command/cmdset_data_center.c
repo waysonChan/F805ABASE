@@ -55,7 +55,7 @@ static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_con
 		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
 		return;
 	
-	if(C->recv.frame.cmd_id == 0xD1){//过滤心跳包
+	if(C->recv.frame.cmd_id == 0xD1){//过滤心跳包0x58
 		for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
 			if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
 				continue;//卡号相同
@@ -79,6 +79,34 @@ static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_con
 }
 
 
+static void ec_recv_tag_confirm_trigger_tstaus(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	int i = 0;
+	bool flag = false;
+	if (S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
+		return;
+	if(C->recv.frame.cmd_id != 0xD2){
+		return ;
+	}else{
+		for(i = 0;i < C->recv.frame.param_len; i++){
+			if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
+				continue;//相同
+			}else{
+				log_msg("Not The Same Status");
+				flag = true;
+				break;
+			}
+		}
+		if(!flag){
+			C->status_cnt = 0;
+			if(C->status_flag)//如果是从文件里发出来的
+				triger_status_delete(false);
+		}
+	}
+	log_msg("ec_recv_tag_confirm_trigger_tstaus");
+}
+
+
 
 
 
@@ -92,6 +120,12 @@ static command_t cmd_recv_tag_confirm_wifi = {
 	.execute = ec_recv_tag_confirm_wifi,
 };
 
+static command_t cmd_recv_tag_confirm_trigger_tstaus = {
+	.cmd_id = COMMAND_RECV_TAG_CONFIRM_TRIGGER_STATUS,
+	.execute = ec_recv_tag_confirm_trigger_tstaus,
+};
+
+
 
 /*
  * 注册指令集和属于此指令集的所有指令
@@ -101,5 +135,6 @@ int data_center_init(void)
 	int err = command_set_register(&cmdset_data_center);
 	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm);
 	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm_wifi);
+	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm_trigger_tstaus);
 	return err;
 }

@@ -10,6 +10,7 @@
 #include "utility.h"
 #include <unistd.h>
 
+
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
@@ -27,6 +28,7 @@ int main(int argc, char *argv[])
 	r2h_connect_t *C = r2h_connect_new(S);
 	ap_connect_t *A = ap_connect_new(S);
 	heartbeat_timer_int(S);
+	triggerstatus_timer_int(S);
 	command_init();
 	if (r2h_connect_init(C, S) < 0)
 		log_msg("r2h_connect_init error");
@@ -56,6 +58,9 @@ int main(int argc, char *argv[])
 
 		maxfd = MAX(maxfd, S->heartbeat_timer);
 		FD_SET(S->heartbeat_timer, &readset);
+
+		maxfd = MAX(maxfd, S->triggerstatus_timer);
+		FD_SET(S->triggerstatus_timer, &readset);
 	
 		if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
 			maxfd = MAX(maxfd, C->gprs_priv.gprs_timer);
@@ -127,6 +132,11 @@ int main(int argc, char *argv[])
 			heartbeat_timer_trigger(C, S );
 		}
 
+		if (FD_ISSET(S->triggerstatus_timer, &readset)) {
+			triggerstatus_timer_trigger(C, S );
+			
+		}
+
 		for (i = 0; i < GPO_NUMBER; i++) {
 			if (FD_ISSET(S->gpo[i].pulse_timer, &readset)) {
 				gpo_pulse_timer_trigger(i, S->gpo[i].pulse_timer);
@@ -145,6 +155,7 @@ int main(int argc, char *argv[])
 				//log_msg("i = %d, fd = %d", i, C->r2h[i].fd);
 				ret = r2h_connect_check_in(C, i);
 				temp_connect_type = C->conn_type;
+				//log_msg("C->conn_type = %d", C->conn_type);
 				if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI && C->conn_type == R2H_WIFI){
 					C->flag = true;
 					C->recv.rlen = ret;

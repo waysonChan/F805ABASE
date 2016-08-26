@@ -18,6 +18,7 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	C->conn_type = R2H_NONE;
 	C->wifi_transparent_mode = false;
 	C->flag = false;
+	C->status_cnt = 0;
 	return C;
 }
 
@@ -49,7 +50,6 @@ ssize_t r2h_connect_send(r2h_connect_t *C, size_t nbytes)
 	if (C->conn_type != R2H_NONE) {
 		return C->r2h[C->conn_type].send(C, C->send.wbuf, nbytes);
 	}
-
 	return -1;
 }
 

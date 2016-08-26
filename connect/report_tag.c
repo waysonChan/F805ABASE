@@ -3,6 +3,7 @@
 #include "command_def.h"
 #include "errcode.h"
 #include "utility.h"
+#include "command_manager.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -12,6 +13,8 @@
 #include <stdlib.h>
 
 LIST_HEAD(tag_report_list);
+
+
 
 /* 链表尾添加 */
 #define MAX_TAG_NUM_IN_RAM	5000
@@ -110,6 +113,30 @@ static int _append_tag_time(tag_t *ptag)
 	return 0;
 }
 
+static int _append_trigger_time(char *buf)
+{
+	time_t first_time;
+	struct tm *ptm;
+	uint8_t time_buf[7];
+	time(&first_time);
+	
+	ptm = localtime(&first_time);
+	time_buf[0] = convert_hex(ptm->tm_sec);		/* 秒 */
+	time_buf[1] = convert_hex(ptm->tm_min);		/* 分 */
+	time_buf[2] = convert_hex(ptm->tm_hour);	/* 时 */
+	time_buf[3] = convert_hex(ptm->tm_wday);	/* 星期 */
+	time_buf[4] = convert_hex(ptm->tm_mday);	/* 日 */
+	time_buf[5] = convert_hex(ptm->tm_mon + 1);	/* 月 */
+	time_buf[6] = convert_hex(ptm->tm_year % 100);	/* 年 */
+
+	memcpy(buf + 2, time_buf, 7);
+
+	return 0;
+}
+
+
+
+
 static inline int _get_cmd_id(int work_status, uint8_t *cmd_id)
 {
 	switch (work_status) {
@@ -148,37 +175,24 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 		return -1;
 	}
 
-	if (S->pre_cfg.work_mode == WORK_MODE_TRIGGER) {
-		switch (S->pre_cfg.upload_mode) {
-		case UPLOAD_MODE_WIEGAND:
-			return tag_report_list_add(ptag, &A->tag_report);
-		case UPLOAD_MODE_RS232:
-			C->conn_type = R2H_RS232;
-			break;
-		case UPLOAD_MODE_RS485:
-			C->conn_type = R2H_RS485;
-			break;
-		case UPLOAD_MODE_WIFI:
-			C->conn_type = R2H_WIFI;
-			break;
-		case UPLOAD_MODE_GPRS:
-			C->conn_type = R2H_GPRS;
-			break;
-		default:
-			C->conn_type = R2H_NONE;
-		}
-	}
-
-
-
 	/* 2.已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
 			_append_tag_time(ptag);
 		}
-		return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
+			//upload_trigger_status(S,ptag); //上传触发状态
+			if(S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val){
+				return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);	
+			}else{
+				return stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
+			}
+		}else{
+			return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+		}
 	}
 
+	
 	/* 3.自动工作模式 */
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) {
 		switch (S->pre_cfg.upload_mode) {
@@ -203,6 +217,27 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 			return -1;
 		}
 
+		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+		C->conn_type = R2H_NONE;	/* 必需 */
+	}else if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
+		switch (S->pre_cfg.upload_mode) {
+		case UPLOAD_MODE_WIEGAND:
+			return tag_report_list_add(ptag, &A->tag_report);
+		case UPLOAD_MODE_RS232:
+			C->conn_type = R2H_RS232;
+			break;
+		case UPLOAD_MODE_RS485:
+			C->conn_type = R2H_RS485;
+			break;
+		case UPLOAD_MODE_WIFI:
+			C->conn_type = R2H_WIFI;
+			break;
+		case UPLOAD_MODE_GPRS:
+			C->conn_type = R2H_GPRS;
+			break;
+		default:
+			C->conn_type = R2H_NONE;
+		}
 		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 		C->conn_type = R2H_NONE;	/* 必需 */
 	}
@@ -233,7 +268,6 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	/* 3.(过滤模式)处理 filter_enable */
 	if (A->tag_report.filter_enable){
 		if(tag_report_list_add(ptag, &A->tag_report) == 1){
-			log_msg("tag_report_list_add");
 			ptag->has_append_time = false;
 			return _finally_tag_send(C, S, A, ptag);
 		}else{
@@ -441,6 +475,7 @@ int report_tag_init(tag_report_t *tag_report)
 	}
 
 	tag_storage_init();
+	triger_status_init();
 	return 0;
 }
 
@@ -520,6 +555,99 @@ int heartbeat_timer_trigger(r2h_connect_t *C, system_param_t *S )
 }
 
 
+int triggerstatus_timer_int(system_param_t *S)
+{
+	S->triggerstatus_timer = timerfd_create(CLOCK_REALTIME, 0);
+	if (S->triggerstatus_timer < 0) {
+		log_ret("timerfd_create error");
+		return -1;
+	} 
+	
+	bzero(&S->triggerstatus_its, sizeof(struct itimerspec));
+	
+	struct itimerspec its = {
+		.it_interval.tv_sec = 0,
+		.it_interval.tv_nsec = 100000000,
+		.it_value.tv_sec = 0,
+		.it_value.tv_nsec = 100000000,
+	};
+
+	S->triggerstatus_its = its;
+	if (timerfd_settime(S->triggerstatus_timer, 0, &S->triggerstatus_its, NULL) < 0) {
+		log_ret("timerfd_settime error");
+		close(S->triggerstatus_timer);
+		return -1;
+	}
+
+	return 0;
+}
+
+
+
+
+
+int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
+{
+	uint64_t num_exp;
+	
+	if (read(S->triggerstatus_timer, &num_exp, sizeof(uint64_t)) != sizeof(uint64_t)) {
+		log_ret("S->triggerstatus_timer_trigger read()");
+		return -1;
+	}
+	
+	if(C->time++ == 10){
+		C->time = 0;
+		if(S->work_status == WS_STOP){
+			int status_cnt;
+			char buf[9];
+			status_cnt = triger_status_get_cnt();
+			if(status_cnt){
+				C->status_flag = true;
+				triger_status_read(buf);
+				send_triggerstatus(C,buf,sizeof(buf));
+			}else{
+				log_msg("triger_status.bin is empty.");
+				return -1;
+			}
+		}
+	}
+	if(S->work_status != WS_STOP){
+		if(C->status_cnt == 1){
+			triger_status_write(C->status);
+			C->status_cnt--;
+			return 1;
+		}else if(C->status_cnt <= 0){
+			return 1;
+		}
+		C->status_flag = false;
+		send_triggerstatus(C,C->status,sizeof(C->status));
+		C->status_cnt--;
+	}
+
+	return 0;
+}
+
+
+void send_triggerstatus(r2h_connect_t *C,const void *buf, size_t sz)
+{
+	int temp_conn_type;
+	temp_conn_type = C->conn_type;
+	C->conn_type = R2H_WIFI;
+	command_answer(C, COMMAND_TRANSMIT_CONTROL_TRIGGERSTATUS, CMD_EXE_SUCCESS, buf, sz);
+	C->conn_type = temp_conn_type;
+
+}
+
+
+int report_triggerstatus(r2h_connect_t *C, system_param_t *S )
+{
+	C->status[0] = S->gpio_dece.gpio1_val;
+	C->status[1] = S->gpio_dece.gpio2_val;
+	//log_msg("key_vals[0] = 0x%02x    key_vals[1] = 0x%02x",C->status[0],C->status[1]);
+	_append_trigger_time(C->status);
+	send_triggerstatus(C,C->status,sizeof(C->status));
+	return 0;
+}
 
 
 

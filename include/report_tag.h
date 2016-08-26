@@ -23,6 +23,20 @@ int tag_storage_init(void);
 int heartbeat_timer_int(system_param_t *S);
 int heartbeat_timer_trigger(r2h_connect_t *C,system_param_t *S);
 int wifi_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
+int report_triggerstatus(r2h_connect_t *C, system_param_t *S );
+
+
+int triger_status_init(void);
+int triger_status_write(char *buf);
+int triger_status_delete(bool all);
+int triggerstatus_timer_int(system_param_t *S);
+int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S );
+void send_triggerstatus(r2h_connect_t *C,const void *buf, size_t sz);
+int triger_status_read(char *buf);
+uint16_t triger_status_get_cnt(void);
+
+
+
 
 
 #endif /* _REPORT_TAG_H */

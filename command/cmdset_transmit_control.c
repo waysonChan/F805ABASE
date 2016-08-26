@@ -59,11 +59,27 @@ static command_t cmd_trans_ctrl_heartbeat = {
 	.execute = ec_trans_ctrl_heartbeat,
 };
 
+
+/*---------------------------------------------------------------------
+ *	÷∏¡Ó:I/O ¥•∑¢◊¥Ã¨ºÏ≤‚÷∏¡Ó
+ *--------------------------------------------------------------------*/
+static void ec_trans_ctrl_triggerstatus(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	command_answer(C, COMMAND_TRANSMIT_CONTROL_TRIGGERSTATUS, CMD_EXE_SUCCESS, NULL, 0);
+}
+
+static command_t cmd_trans_ctrl_triggerstatus = {
+	.cmd_id = COMMAND_TRANSMIT_CONTROL_TRIGGERSTATUS,
+	.execute = ec_trans_ctrl_triggerstatus,
+};
+
+
 int trans_control_init(void)
 {
 	int err = command_set_register(&cmdset_trans_control);
 	err |= command_register(&cmdset_trans_control, &cmd_trans_ctrl_connect);
 	err |= command_register(&cmdset_trans_control, &cmd_trans_ctrl_heartbeat);
 	err |= command_register(&cmdset_trans_control, &cmd_trans_ctrl_closeconn);
+	err |= command_register(&cmdset_trans_control, &cmd_trans_ctrl_triggerstatus);
 	return err;
 }

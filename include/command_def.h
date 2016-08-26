@@ -70,6 +70,8 @@
 #define COMMAND_TRANSMIT_CONTROL_UNLINK			0x51	/* 断开连接指令 */
 #define COMMAND_TRANSMIT_CONTROL_FINISH			0x53	/* 指令 */
 #define COMMAND_TRANSMIT_CONTROL_HEARTBEAT		0x58	/* 心跳包指令 */
+#define COMMAND_TRANSMIT_CONTROL_TRIGGERSTATUS	0x59	/* I/O 触发状态检测指令*/
+
 
 /*---------------------------------------------------------------------
  *	ISO18000-6C协议标签操作指令集，子类型定义
@@ -119,8 +121,11 @@
 /*---------------------------------------------------------------------
  *	数据中心
  *--------------------------------------------------------------------*/
-#define COMMAND_RECV_TAG_CONFIRM			0xD0	/* 接收标签确认指令 */
-#define COMMAND_RECV_TAG_CONFIRM_WIFI		0xD1
+#define COMMAND_RECV_TAG_CONFIRM					0xD0	/* 接收标签确认指令 */
+#define COMMAND_RECV_TAG_CONFIRM_WIFI				0xD1  	/* 接收标签确认指令 */
+#define COMMAND_RECV_TAG_CONFIRM_TRIGGER_STATUS		0xD2	/* 接收触发状态确认指令 */
+
+
 
 /*---------------------------------------------------------------------
  *	R2000 相关指令

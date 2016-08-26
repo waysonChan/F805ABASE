@@ -47,7 +47,6 @@ ssize_t r2h_rs485_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 {
 	ssize_t ret;
 	uint32_t n_written = 0;
-
 	while (n_written < nbytes) {
 		ret = write(C->r2h[R2H_RS485].fd, buf+n_written, nbytes-n_written);
 		if (ret < 0) {

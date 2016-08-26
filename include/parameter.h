@@ -147,6 +147,9 @@ typedef struct {
 	int heartbeat_timer;
 	struct itimerspec heartbeat_its;
 
+	int triggerstatus_timer;
+	struct itimerspec triggerstatus_its;
+
 	pre_cfg_t pre_cfg;			/* 预置工作参数 */
 	sysinfo_t sysinfo;
 	rs232_t rs232;

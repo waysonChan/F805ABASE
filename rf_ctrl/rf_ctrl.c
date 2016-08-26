@@ -12,6 +12,7 @@
 #include "gpio.h"
 #include "report_tag.h"
 #include "command_manager.h"
+#include <sys/timerfd.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -1012,6 +1013,8 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	}
 	S->gpio_dece.gpio1_val = key_vals[0];
 	S->gpio_dece.gpio2_val = key_vals[1];
+	report_triggerstatus(C,S);//上传状态
+	C->status_cnt = 6;
 	if((key_vals[0]==1) || (key_vals[1]==1)){//接入设备
 		if(S->work_status == WS_STOP)
 		{
@@ -1057,5 +1060,8 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	}
 	return 0;
 }
+
+
+
 
 

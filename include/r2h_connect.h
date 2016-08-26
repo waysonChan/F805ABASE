@@ -36,6 +36,7 @@ typedef struct {
 	size_t wlen;
 } r2h_send_t;
 
+
 typedef struct r2h_connect r2h_connect_t;
 typedef int (*r2h_open)(r2h_connect_t *C, int arg);
 typedef int (*r2h_close_client)(r2h_connect_t *C);
@@ -98,6 +99,10 @@ struct r2h_connect {
 	int conn_type;
 	int wg_fd;
 	int count;
+	int time;
+	char status[9];
+	int status_cnt;
+	bool status_flag;
 	bool flag;
 	gprs_priv_t gprs_priv;
 	wifi_priv_t wifi_priv;

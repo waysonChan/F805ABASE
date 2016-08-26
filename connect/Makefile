@@ -11,3 +11,4 @@ obj-y += r2h_usb.o
 obj-y += r2h_wifi.o
 obj-y += r2h_gprs.o
 obj-y += tag_storage.o
+obj-y += status_storage.o

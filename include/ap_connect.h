@@ -39,6 +39,18 @@ struct _tag_t{
 	uint8_t data[MAX_TAG_EPC_LEN];	/* EPC码 */
 };
 
+typedef struct _status_t status_t;
+struct _status_t{
+	struct list_head list;
+	uint16_t cnt;		
+	uint16_t status_len;
+	uint8_t status[9];	
+};
+typedef struct {
+	uint32_t status_cnt;		/* 状态数量 */
+} status_report_t;
+
+
 typedef struct {
 	uint8_t filter_enable;
 	uint8_t filter_time;		/* 标签过滤时间,单位100ms */

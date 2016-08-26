@@ -82,7 +82,6 @@ static inline int _send_answer(r2h_connect_t *C)
 	uint16_t crc_val = crc_16_buf(C->send.wbuf+1, C->send.wlen-1);	/* 帧头不参加校验 */
 	C->send.wbuf[C->send.wlen++] = (uint8_t)(crc_val >> 8);
 	C->send.wbuf[C->send.wlen++] = (uint8_t)(crc_val & 0xff);
-
 	size_t total = replace_keyword(C->send.wbuf+1, C->send.wlen-1) + 1;	/* 帧头不能被替换 */
 	return r2h_connect_send(C, total);
 }
