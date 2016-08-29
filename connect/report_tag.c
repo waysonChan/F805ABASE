@@ -176,6 +176,8 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 		return -1;
 	}
 
+	log_msg("C->conn_type = %d", C->conn_type);
+	
 	/* 2.已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
@@ -230,9 +232,11 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 			C->conn_type = R2H_RS485;
 			break;
 		case UPLOAD_MODE_WIFI:
+			_append_tag_time(ptag);
 			C->conn_type = R2H_WIFI;
 			break;
 		case UPLOAD_MODE_GPRS:
+			_append_tag_time(ptag);
 			C->conn_type = R2H_GPRS;
 			break;
 		default:
@@ -303,8 +307,8 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 
 	/* 1.处理链表tag */
 	if (!list_empty(&tag_report_list)) {
-		struct list_head *l = tag_report_list.next;
-		tag_t *p = list_entry(l, tag_t, list);
+		//struct list_head *l = tag_report_list.next;
+		//tag_t *p = list_entry(l, tag_t, list);
 
 		if (gprs_priv->gprs_wait_flag && (gprs_priv->gprs_fail_cnt++ >= MAX_SEND_FAIL_TIMES)) {
 			/* 将链表中tag写入文件 */
@@ -315,7 +319,8 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			/* 发送链表头的tag */
 			gprs_priv->gprs_wait_flag = true;
 			gprs_priv->gprs_send_type = GPRS_SEND_TYPE_RAM;
-			return _finally_tag_send(C, S, A, p);
+			//return _finally_tag_send(C, S, A, p);
+			return 0;
 		}
 	} else {
 		/* 2.处理文件tag */
@@ -649,7 +654,6 @@ void send_triggerstatus(r2h_connect_t *C,const void *buf, size_t sz)
 	command_answer(C, COMMAND_TRANSMIT_CONTROL_TRIGGERSTATUS, CMD_EXE_SUCCESS, buf, sz);
 	C->conn_type = temp_conn_type;
 
-	log_msg("####send_triggerstatus####");
 }
 
 

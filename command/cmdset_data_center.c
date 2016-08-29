@@ -50,31 +50,55 @@ static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_con
 	int i = 0;
 	bool flag = false;
 	
-	wifi_priv_t *wifi_priv = &C->wifi_priv;
 	if (A->tag_report.filter_enable == false
 		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
 		return;
 
+
 	if(C->recv.frame.cmd_id == 0xD1){//过滤心跳包0x58
-		for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
-			if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
-				continue;//卡号相同
-			}else{
-				flag = true;
+		if(S->pre_cfg.dev_type & DEV_TYPE_FLAG_WIFI){
+			wifi_priv_t *wifi_priv = &C->wifi_priv;
+			for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
+				if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
+					continue;//卡号相同
+				}else{
+					flag = true;
+				}
 			}
-		}
-		if(!flag){
-			wifi_priv->wifi_fail_cnt = 0;
-			wifi_priv->wifi_wait_flag = false;
-			if (wifi_priv->wifi_send_type == WIFI_SEND_TYPE_RAM) {
-				;
-				//tag_report_list_del(&A->tag_report);
-			} else {
-				tag_storage_delete(false);
+			if(!flag){
+				wifi_priv->wifi_fail_cnt = 0;
+				wifi_priv->wifi_wait_flag = false;
+				if (wifi_priv->wifi_send_type == WIFI_SEND_TYPE_RAM) {
+					;
+					//tag_report_list_del(&A->tag_report);
+				} else {
+					tag_storage_delete(false);
+				}
+				return;
 			}
-			return;
+			wifi_tag_send_header(C, S, A);
+		}else if(S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS){
+			log_msg("#########");
+			gprs_priv_t *gprs_priv = &C->gprs_priv;
+			for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
+				if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
+					continue;//卡号相同
+				}else{
+					flag = true;
+				}
+			}
+			if(!flag){
+				gprs_priv->gprs_fail_cnt = 0;
+				gprs_priv->gprs_wait_flag = false;
+				if (gprs_priv->gprs_send_type == GPRS_SEND_TYPE_RAM) {
+					;
+					//tag_report_list_del(&A->tag_report);
+				} else {
+					tag_storage_delete(false);
+				}
+			}
+			gprs_tag_send_header(C, S, A);	
 		}
-		wifi_tag_send_header(C, S, A);
 	}
 }
 
