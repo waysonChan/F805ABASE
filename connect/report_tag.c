@@ -182,7 +182,6 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 			_append_tag_time(ptag);
 		}
 		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
-			//upload_trigger_status(S,ptag); //ÉÏ´«´¥·¢×´Ì¬
 			if(S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val){
 				return command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);	
 			}else{

@@ -56,12 +56,14 @@ int main(int argc, char *argv[])
 		maxfd = MAX(maxfd, S->work_status_timer);
 		FD_SET(S->work_status_timer, &readset);
 
-		maxfd = MAX(maxfd, S->heartbeat_timer);
-		FD_SET(S->heartbeat_timer, &readset);
-
-		maxfd = MAX(maxfd, S->triggerstatus_timer);
-		FD_SET(S->triggerstatus_timer, &readset);
-	
+		if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI){
+			maxfd = MAX(maxfd, S->heartbeat_timer);
+			FD_SET(S->heartbeat_timer, &readset);
+		}
+		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
+			maxfd = MAX(maxfd, S->triggerstatus_timer);
+			FD_SET(S->triggerstatus_timer, &readset);
+		}
 		if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
 			maxfd = MAX(maxfd, C->gprs_priv.gprs_timer);
 			FD_SET(C->gprs_priv.gprs_timer, &readset);
@@ -124,18 +126,22 @@ int main(int argc, char *argv[])
 			r2h_gprs_timer_trigger(C);
 		}
 
-		if (FD_ISSET(S->gpio_dece.fd, &readset)) {
-			trigger_to_read_tag(C, S, A);
-		}
-
-		if (FD_ISSET(S->heartbeat_timer, &readset)) {
-			heartbeat_timer_trigger(C, S );
-		}
-
-		if (FD_ISSET(S->triggerstatus_timer, &readset)) {
-			triggerstatus_timer_trigger(C, S );
+		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
+			if (FD_ISSET(S->gpio_dece.fd, &readset)) {
+				trigger_to_read_tag(C, S, A);
+			}
 			
+			if (FD_ISSET(S->triggerstatus_timer, &readset)) {
+				triggerstatus_timer_trigger(C, S );
+			}
 		}
+
+		if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI){
+			if (FD_ISSET(S->heartbeat_timer, &readset)) {
+				heartbeat_timer_trigger(C, S );
+			}
+		}
+
 
 		for (i = 0; i < GPO_NUMBER; i++) {
 			if (FD_ISSET(S->gpo[i].pulse_timer, &readset)) {
