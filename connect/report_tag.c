@@ -140,6 +140,7 @@ static int _append_trigger_time(char *buf)
 
 static inline int _get_cmd_id(int work_status, uint8_t *cmd_id)
 {
+	log_msg("work_status = %d",work_status);
 	switch (work_status) {
 	case WS_READ_EPC_FIXED:
 	case WS_READ_EPC_FIXED_WEB:
@@ -175,8 +176,6 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 		log_msg("_finally_tag_send: invalid cmd_id");
 		return -1;
 	}
-
-	log_msg("C->conn_type = %d", C->conn_type);
 	
 	/* 2.已建立连接 */
 	if (C->conn_type != R2H_NONE) {
@@ -275,6 +274,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 			ptag->has_append_time = false;
 			return _finally_tag_send(C, S, A, ptag);
 		}else{
+			log_msg("werrwer");
 			return 0;
 		}
 	}
@@ -353,6 +353,7 @@ int wifi_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			/* 将链表中tag写入文件 */
 			wifi_priv->wifi_fail_cnt = 0;
 			wifi_priv->wifi_wait_flag = false;
+			log_msg("wifi_fail_cnt = %d",wifi_priv->wifi_fail_cnt);
 			return _tag_storage_write_all(tag_report);
 		} else {
 			/* 发送链表头的tag */
@@ -388,9 +389,12 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		log_ret("report_tag_timer read()");
 		return -1;
 	}
-
+	
 	if ((S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE) && 
 		((C->conn_type == R2H_GPRS && S->work_status != WS_STOP)
+		||(C->conn_type == R2H_NONE 
+		&& S->pre_cfg.work_mode == WORK_MODE_TRIGGER
+		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS)
 		|| (C->conn_type == R2H_NONE 
 		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS))) {
@@ -400,9 +404,13 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 
 	if ((S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE) && 
 		((C->conn_type == R2H_WIFI && S->work_status != WS_STOP)
+		||(C->conn_type == R2H_NONE 
+		&& S->pre_cfg.work_mode == WORK_MODE_TRIGGER
+		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI)
 		|| (C->conn_type == R2H_NONE 
 		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI))) {
+		log_msg("dddddddddddd");
 		wifi_tag_send_header(C, S, A);
 	}	
 
