@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 			FD_SET(C->r2h[R2H_GPRS].fd, &writeset);
 		}
 
-
+		maxfd = MAX(maxfd, S->gpio_dece.fd);
 		FD_SET(S->gpio_dece.fd,&readset);
 
 		int err = select(maxfd+1, &readset, &writeset, NULL, NULL);
