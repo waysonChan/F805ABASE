@@ -34,7 +34,7 @@ int triger_status_write(char *buf)
 			triger_status_total--; /* 更新标签数失败,恢复标签数 */
 			return -1;
 		} else {
-			log_msg("tag_storage_write: triger_status_total = %d", triger_status_total);
+			log_msg("triger_storage_write: triger_status_total = %d", triger_status_total);
 		}
 	}
 	return 0;

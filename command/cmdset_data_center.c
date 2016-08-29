@@ -54,7 +54,7 @@ static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_con
 	if (A->tag_report.filter_enable == false
 		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
 		return;
-	
+
 	if(C->recv.frame.cmd_id == 0xD1){//过滤心跳包0x58
 		for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
 			if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
@@ -92,20 +92,20 @@ static void ec_recv_tag_confirm_trigger_tstaus(r2h_connect_t *C, system_param_t 
 			if(C->recv.frame.param_buf[i+1] == C->status_buf[i]){
 				continue;//相同
 			}else{
-				//log_msg("#########Not The Same Status############");
-
 				flag = true;
 				break;
 			}
 		}
 		if(!flag){
 			C->status_cnt = 0;
-			if(C->status_flag)//如果是从文件里发出来的
+			C->triger_flag = false;
+			if(C->status_flag){//如果是从文件里发出来的
 				C->status_flag = false;
 				triger_status_delete(false);
+			}
 		}
 	}
-	log_msg("ec_recv_tag_confirm_trigger_tstaus");
+	//log_msg("ec_recv_tag_confirm_trigger_tstaus");
 }
 
 

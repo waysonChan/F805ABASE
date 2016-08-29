@@ -594,6 +594,7 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 		log_ret("S->triggerstatus_timer_trigger read()");
 		return -1;
 	}
+
 	
 	if(C->time++ == 10){
 		C->time = 0;
@@ -603,6 +604,7 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 			status_cnt = triger_status_get_cnt();
 			if(status_cnt){
 				C->status_flag = true;
+				//C->triger_flag = true;
 				triger_status_read(buf);
 				send_triggerstatus(C,buf,sizeof(buf));
 			}else{
@@ -611,9 +613,11 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 			}
 		}
 	}
-	if(S->work_status != WS_STOP){
+	
+	if(C->triger_flag){
 		if(C->status_cnt == 1){
 			triger_status_write(C->status);
+			C->triger_flag = false;
 			C->status_cnt--;
 			return 1;
 		}else if(C->status_cnt <= 0){
@@ -623,6 +627,7 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 		send_triggerstatus(C,C->status,sizeof(C->status));
 		C->status_cnt--;
 	}
+	
 
 	return 0;
 }
@@ -644,6 +649,7 @@ void send_triggerstatus(r2h_connect_t *C,const void *buf, size_t sz)
 	command_answer(C, COMMAND_TRANSMIT_CONTROL_TRIGGERSTATUS, CMD_EXE_SUCCESS, buf, sz);
 	C->conn_type = temp_conn_type;
 
+	log_msg("####send_triggerstatus####");
 }
 
 
@@ -651,7 +657,6 @@ int report_triggerstatus(r2h_connect_t *C, system_param_t *S )
 {
 	C->status[0] = S->gpio_dece.gpio1_val;
 	C->status[1] = S->gpio_dece.gpio2_val;
-	//log_msg("key_vals[0] = 0x%02x    key_vals[1] = 0x%02x",C->status[0],C->status[1]);
 	_append_trigger_time(C->status);
 	send_triggerstatus(C,C->status,sizeof(C->status));
 	return 0;

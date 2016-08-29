@@ -63,6 +63,9 @@ int main(int argc, char *argv[])
 		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
 			maxfd = MAX(maxfd, S->triggerstatus_timer);
 			FD_SET(S->triggerstatus_timer, &readset);
+
+			maxfd = MAX(maxfd, S->gpio_dece.fd);
+			FD_SET(S->gpio_dece.fd,&readset);
 		}
 		if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
 			maxfd = MAX(maxfd, C->gprs_priv.gprs_timer);
@@ -94,8 +97,7 @@ int main(int argc, char *argv[])
 			FD_SET(C->r2h[R2H_GPRS].fd, &writeset);
 		}
 
-		maxfd = MAX(maxfd, S->gpio_dece.fd);
-		FD_SET(S->gpio_dece.fd,&readset);
+
 
 		int err = select(maxfd+1, &readset, &writeset, NULL, NULL);
 		if (err < 0) {
@@ -161,7 +163,6 @@ int main(int argc, char *argv[])
 				//log_msg("i = %d, fd = %d", i, C->r2h[i].fd);
 				ret = r2h_connect_check_in(C, i);
 				temp_connect_type = C->conn_type;
-				//log_msg("C->conn_type = %d", C->conn_type);
 				if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI && C->conn_type == R2H_WIFI){
 					C->flag = true;
 					C->recv.rlen = ret;

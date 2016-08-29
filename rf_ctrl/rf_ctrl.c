@@ -1011,6 +1011,7 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		log_ret("trigger_to_read_tag read()\n");
 		return -1;
 	}
+	C->triger_flag = true;
 	S->gpio_dece.gpio1_val = key_vals[0];
 	S->gpio_dece.gpio2_val = key_vals[1];
 	report_triggerstatus(C,S);//ÉÏ´«×´Ì¬
