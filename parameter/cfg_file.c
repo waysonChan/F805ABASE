@@ -623,6 +623,7 @@ int cfg_set_pre_cfg(pre_cfg_t *pre_cfg)
 
 	s = config_lookup(&cfg, "pre_cfg.flash_enable");
 	if (s) {
+		log_msg("pre_cfg->flash_enable = %d",pre_cfg->flash_enable);
 		config_setting_set_int(s, pre_cfg->flash_enable);
 	}
 

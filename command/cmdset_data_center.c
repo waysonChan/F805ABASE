@@ -77,7 +77,6 @@ static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_con
 			}
 			wifi_tag_send_header(C, S, A);
 		}else if(S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS){
-			log_msg("####8888888888888888#####");
 			gprs_priv_t *gprs_priv = &C->gprs_priv;
 			for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
 				if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){

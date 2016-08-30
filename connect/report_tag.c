@@ -140,7 +140,6 @@ static int _append_trigger_time(char *buf)
 
 static inline int _get_cmd_id(int work_status, uint8_t *cmd_id)
 {
-	log_msg("work_status = %d",work_status);
 	switch (work_status) {
 	case WS_READ_EPC_FIXED:
 	case WS_READ_EPC_FIXED_WEB:
@@ -172,7 +171,11 @@ static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *
 	
 	/* 1.»ñÈ¡ cmd_id */
 	uint8_t cmd_id;
-	if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
+	if(C->conn_type == R2H_NONE 
+		&& S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
+		cmd_id = S->pre_cfg.oper_mode;
+		log_msg("send tag data from file");
+	}else if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
 		log_msg("_finally_tag_send: invalid cmd_id");
 		return -1;
 	}
@@ -274,7 +277,6 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 			ptag->has_append_time = false;
 			return _finally_tag_send(C, S, A, ptag);
 		}else{
-			log_msg("werrwer");
 			return 0;
 		}
 	}
@@ -410,7 +412,6 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		|| (C->conn_type == R2H_NONE 
 		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI))) {
-		log_msg("dddddddddddd");
 		wifi_tag_send_header(C, S, A);
 	}	
 
