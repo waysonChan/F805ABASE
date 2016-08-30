@@ -94,6 +94,7 @@ static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_con
 				} else {
 					tag_storage_delete(false);
 				}
+				return;
 			}
 			gprs_tag_send_header(C, S, A);	
 		}
