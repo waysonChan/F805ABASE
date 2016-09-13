@@ -156,6 +156,14 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				cfg_set_pre_cfg(&S->pre_cfg);
 			}
 			break;
+		case 228:   /* extended_table */
+			if (len != 10) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			memcpy(S->extended_table, cmd_param+1, len);
+			cfg_set_extended_table(S->extended_table,len);
+			break;
 		case 239:	/* operation type */
 			if (im_val == OPERATE_READ_EPC
 				|| im_val == OPERATE_READ_TID
@@ -273,6 +281,13 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		case 221:	/* pulse periods */
 			ex_val = S->pre_cfg.wg_pulse_periods;
 			break;
+		case 228:  {/* get_extended_table */
+			uint8_t get_extended_table[10];
+			cfg_get_extended_table(get_extended_table,10);
+			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, CMD_EXE_SUCCESS, 
+				get_extended_table, 10);
+			return;
+			}
 		case 239:	/* operation type */
 			ex_val = S->pre_cfg.oper_mode;
 			break;

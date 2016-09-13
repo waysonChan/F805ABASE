@@ -55,7 +55,9 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 	/* 如果为韦根自动上传自过滤时间为250ms */
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
-		A->tag_report.filter_time = 2;
+		if(A->tag_report.filter_enable == false){
+			A->tag_report.filter_time = 2;
+		}
 	}
 	
 	if (A->tag_report.filter_time) {

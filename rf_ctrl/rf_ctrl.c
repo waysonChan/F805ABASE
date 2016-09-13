@@ -550,7 +550,7 @@ int auto_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		tag_param_t *T = &S->tag_param;
 		T->access_bank = RFID_18K6C_MEMORY_BANK_TID;
 		T->access_offset = 0;
-		T->access_wordnum = 4;
+		T->access_wordnum = S->pre_cfg.tid_len;//read tid len from cfg file
 		bzero(T->access_pwd, sizeof(T->access_pwd));
 		
 		set_active_antenna(S, S->cur_ant);
@@ -562,7 +562,7 @@ int auto_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		tag_param_t *T = &S->tag_param;
 		T->access_bank = RFID_18K6C_MEMORY_BANK_TID;
 		T->access_offset = 0;
-		T->access_wordnum = 4;
+		T->access_wordnum = S->pre_cfg.tid_len;//read tid len from cfg file
 		bzero(T->access_pwd, sizeof(T->access_pwd));
 
 		set_next_active_antenna(S);
@@ -999,24 +999,92 @@ int r2000_freq_config(system_param_t *S, ap_connect_t *A)
 	return 0;
 }
 
+#if 1
+void action_identify(system_param_t *S,unsigned char point_A,unsigned char point_B)
+{
+	S->action_status.report_status = JUDGE;//STATUS 1 进入判断状态
+	if(point_A ==1 && point_B ==0){
+		if(S->action_status.action_flag == true){
+			if(S->action_status.first_in){
+				S->action_status.status_3 = 1;//STATUS 3 ***A -> B***
+			}else{
+				S->action_status.status_5 = 1;
+			}
+		}else{
+			S->action_status.first_in = 0;//first  A
+		}
+	}else if(point_A==0 && point_B==1){
+		if(S->action_status.action_flag == true){
+			if(!S->action_status.first_in){
+				S->action_status.status_4 = 1;//STATUS 4 ***B -> A***
+			}else{
+				S->action_status.status_5 = 1;
+			}
+		}else{
+			S->action_status.first_in = 1;//first  B
+		}
+	}
+
+	
+	if((point_A==1) && (point_B==1)){
+		S->action_status.status_2 = 1;//STATUS 2  进入 流程1
+		S->action_status.action_flag = true;/* flag = true */
+	}
+}
+
+void action_report(system_param_t *S)
+{
+	//S->action_status.status_5 = 1;//STATUS 5 (0,0)退出判断状态
+	if(S->action_status.report_status == JUDGE){
+		if(S->action_status.status_3){
+			S->action_status.report_status = STATUS_A_TO_B;
+			printf("enter successful.	 first in A\n");
+		}else if(S->action_status.status_4){
+			S->action_status.report_status = STATUS_B_TO_A;
+			printf("enter successful.	 first in B\n");
+		}else if(S->action_status.status_5){
+			printf("BACK TWO\n");//触发两个后又退回
+			S->action_status.report_status = STATUS_USELESS;
+		}else{
+			printf("back one\n");//触发一个后又退回
+			S->action_status.report_status = STATUS_USELESS;
+		}
+	}
+	S->action_status.status_2 = 0;
+	S->action_status.status_3 = 0;
+	S->action_status.status_4 = 0;
+	S->action_status.status_5 = 0;
+	S->action_status.action_flag = false;
+	S->action_status.first_in = 0;
+
+}
+
+
+#endif
 
 /* 触发读卡功能 */
 int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	unsigned char key_vals[2];
+	
 	if(S->pre_cfg.work_mode != WORK_MODE_TRIGGER){
 		return -1;
 	}
+	
 	if(read(S->gpio_dece.fd, key_vals, sizeof(key_vals)) < 0){
 		log_ret("trigger_to_read_tag read()\n");
 		return -1;
-	}
-	C->triger_flag = true;
+	} 
+	
+	delay_timer_set(S,0);
+	C->triger_confirm_flag = true;
 	S->gpio_dece.gpio1_val = key_vals[0];
 	S->gpio_dece.gpio2_val = key_vals[1];
-	report_triggerstatus(C,S);//上传状态
+	//report_triggerstatus(C,S);//上传状态
 	C->status_cnt = 6;
-	if((key_vals[0]==1) || (key_vals[1]==1)){//接入设备
+
+	if((key_vals[0]==1) || (key_vals[1]==1)){//接入设备	
+		action_identify(S,key_vals[0],key_vals[1]);
 		if(S->work_status == WS_STOP)
 		{
 			switch (S->pre_cfg.oper_mode) {
@@ -1053,10 +1121,17 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				log_msg("start error");
 			auto_read_tag(C, S, A);
 		}
-	}else{//拔出设备
+	}else{//未触发设备
 		if(S->work_status != WS_STOP){
-			stop_read_tag(S, A);
-			S->work_status = WS_STOP;
+			action_report(S);
+			if(S->extended_table[0] == 0){
+				delay_timer_set(S,0);
+				stop_read_tag(S, A);
+				S->work_status = WS_STOP;
+			}else{
+				printf("Start delay timer %d s\n",S->extended_table[0]);
+				delay_timer_set(S,S->extended_table[0]);
+			}
 		}
 	}
 	return 0;

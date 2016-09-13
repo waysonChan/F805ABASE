@@ -1100,3 +1100,83 @@ out:
 	config_destroy(&cfg);
 	return err;
 }
+
+
+
+
+
+
+
+
+
+int cfg_get_extended_table(uint8_t *extended_table, int len)
+{
+	int i, err = 0;	
+	config_t cfg;
+	config_setting_t *s;
+
+	config_init(&cfg);
+	if (!config_read_file(&cfg, CONFIG_FILE_NAME)) {
+		log_msg("%s:%d - %s", config_error_file(&cfg), 
+			config_error_line(&cfg), config_error_text(&cfg));
+		err = -1;
+		goto out;
+	}
+
+	s = config_lookup(&cfg, "extended_table");
+	if (NULL == s) {
+		log_msg("%s: config_lookup() ERR!", __FUNCTION__);
+		err = -1;
+		goto out;
+	}
+
+	for (i = 0; i < len; i++) {
+		extended_table[i] = config_setting_get_int_elem(s, i);
+	}
+
+out:
+	config_destroy(&cfg);
+	return err;
+}
+
+
+
+
+int cfg_set_extended_table(uint8_t *extended_table, int len)
+{
+	int i, err = 0;	
+	config_t cfg;
+	config_setting_t *s;
+
+	config_init(&cfg);
+	if (!config_read_file(&cfg, CONFIG_FILE_NAME)) {
+		log_msg("%s:%d - %s", config_error_file(&cfg), 
+			config_error_line(&cfg), config_error_text(&cfg));
+		err = -1;
+		goto out;
+	}
+
+	s = config_lookup(&cfg, "extended_table");
+	if (NULL == s) {
+		log_msg("%s: config_lookup() ERR!", __FUNCTION__);
+		err = -1;
+		goto out;
+	}
+
+	for (i = 0; i < len; i++) {
+		 config_setting_set_int_elem(s, i, extended_table[i]);
+	}
+
+	if (!(config_write_file(&cfg, CONFIG_FILE_NAME))) {
+		log_msg("%s: config_write_file() ERR!", __FUNCTION__);
+		err = -1;
+		goto out;
+	}
+
+out:
+	config_destroy(&cfg);
+	return err;
+}
+
+
+

@@ -14,7 +14,7 @@ static uint16_t triger_status_total = 0;
 
 int triger_status_write(char *buf)
 {
-	unsigned char val[9];
+	unsigned char val[10];
 	memcpy(val, buf, sizeof(val));
 	if (triger_status_total >= TS_TRIGER_MAX_NUM) {
 		log_msg("triger_status_write: triger_status_total >= TS_TAG_MAX_NUM");
@@ -50,9 +50,9 @@ int triger_status_read(char *buf)
 	if (triger_status_total == 0){
 		return -1;
 	}
-	fseek(triger_fp, TS_HEADER_LEN + (triger_status_total-1)*9, SEEK_SET);
+	fseek(triger_fp, TS_HEADER_LEN + (triger_status_total-1)*10, SEEK_SET);
 	
-	size_t sz = fread(buf, 9, 1, triger_fp);
+	size_t sz = fread(buf, 10, 1, triger_fp);
 	if (sz != 1) {
 		log_msg("fread error");
 		return -1;

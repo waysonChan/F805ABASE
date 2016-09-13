@@ -51,12 +51,8 @@ typedef struct {
 	r2h_send send;
 } r2h_t;
 
-#define GPRS_SEND_TYPE_RAM	1
-#define GPRS_SEND_TYPE_NAND	2
-
-#define WIFI_SEND_TYPE_RAM	1
-#define WIFI_SEND_TYPE_NAND	2
-
+#define SEND_TYPE_RAM	1
+#define SEND_TYPE_NAND	2
 
 typedef struct {
 	bool connected;
@@ -80,6 +76,26 @@ typedef struct {
 	int wifi_send_type;	
 } wifi_priv_t;
 
+typedef struct {
+	bool connected;
+	bool connect_in_progress;
+	int tcp_port;
+	int timer;	
+	struct sockaddr_in server_addr;
+	bool wait_flag;
+	int fail_cnt;	
+	int send_type;	
+} total_priv_t;
+
+#define UPLOAD_MODE_NONE	0x00
+#define UPLOAD_MODE_RS232	0x01
+#define UPLOAD_MODE_RS485	0x02
+#define UPLOAD_MODE_WIEGAND	0x03
+#define UPLOAD_MODE_WIFI	0x04
+#define UPLOAD_MODE_GPRS	0x05
+#define UPLOAD_MODE_TCP		0x06
+#define UPLOAD_MODE_UDP		0x07
+
 
 #define R2H_NONE	-1
 #define R2H_TCP		0
@@ -100,14 +116,15 @@ struct r2h_connect {
 	int wg_fd;
 	int count;
 	int time;
-	char status[9];
+	char status[10];
 	int status_cnt;
-	bool status_flag;
-	bool triger_flag;
+	bool status_send_from_file;
+	bool triger_confirm_flag;
 	char status_buf[10];
 	bool flag;
 	gprs_priv_t gprs_priv;
 	wifi_priv_t wifi_priv;
+	total_priv_t total_priv;
 	struct sockaddr_in udp_client_addr;	/* UDP×¨ÓÃ */
 	r2h_t r2h[R2H_TOTAL];
 };

@@ -119,6 +119,18 @@ typedef struct {
 	int gpio2_val;
 } gpio_desc;
 
+typedef struct {
+	char status_1;
+	char status_2;
+	char status_3;
+	char status_4;
+	char status_5;
+	bool action_flag;
+	unsigned char first_in;
+	char report_status;
+} action_stat;
+
+
 
 #define ANT_IDX_POLL		0x00
 #define ANT_IDX_1		0x01
@@ -126,12 +138,8 @@ typedef struct {
 #define ANT_IDX_3		0x03
 #define ANT_IDX_4		0x04
 
-#define UPLOAD_MODE_NONE	0x00
-#define UPLOAD_MODE_RS232	0x01
-#define UPLOAD_MODE_RS485	0x02
-#define UPLOAD_MODE_WIEGAND	0x03
-#define UPLOAD_MODE_WIFI	0x04
-#define UPLOAD_MODE_GPRS	0x05
+
+
 
 #define NAND_FLASH_ENBABLE	0x01
 #define NAND_FLASH_DISABLE	0x00
@@ -210,5 +218,7 @@ int cfg_get_data_center(data_center_t *data_center);
 int cfg_set_data_center(data_center_t *data_center);
 int cfg_get_freq_table(uint8_t *freq_table, int len);
 int cfg_set_freq_table(uint8_t *freq_table, int len);
+int cfg_get_extended_table(uint8_t *extended_table, int len);
+int cfg_set_extended_table(uint8_t *extended_table, int len);
 
 #endif	/* _CFG_FILE_H */

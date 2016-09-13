@@ -70,6 +70,9 @@ static void ec_reader_man_rfpwd(r2h_connect_t *C, system_param_t *S, ap_connect_
 
 	switch (*cmd_param) {
 	case RFPWD_OFF:
+		/*收到停止指令进入命令模式，退出自动读卡或触发读卡模式2016-09-08*/
+		S->pre_cfg.work_mode = WORK_MODE_COMMAND;//herui
+		log_msg("work mode =%d\n",S->pre_cfg.work_mode);
 		err = stop_read_tag(S, A);
 		break;
 	case RFPWD_ON:

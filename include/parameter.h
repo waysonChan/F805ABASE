@@ -72,6 +72,16 @@
 #define LOCKSET_ACCESS_PIN		0x04
 #define LOCKSET_KILL_PIN		0x05
 
+/*------------------------------------------------------------------
+  *   进出状态相关
+  *-----------------------------------------------------------------*/
+#define JUDGE   			0x00
+#define STATUS_A_TO_B   	0x01
+#define STATUS_B_TO_A   	0x02
+#define STATUS_USELESS   	0x03
+
+
+
 /*---------------------------------------------------------------------
  *	频率操作相关参数
  *--------------------------------------------------------------------*/
@@ -150,6 +160,9 @@ typedef struct {
 	int triggerstatus_timer;
 	struct itimerspec triggerstatus_its;
 
+	int delay_timer;
+	struct itimerspec delay_timer_its;
+
 	pre_cfg_t pre_cfg;			/* 预置工作参数 */
 	sysinfo_t sysinfo;
 	rs232_t rs232;
@@ -173,6 +186,10 @@ typedef struct {
 	uint8_t freq_table[FREQ_MAP_LEN];
 
 	gpio_desc gpio_dece;
+
+	action_stat action_status;
+
+	uint8_t extended_table[10];
 } system_param_t;
 
 extern const uint32_t baud_table[6];

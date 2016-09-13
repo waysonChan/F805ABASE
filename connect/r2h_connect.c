@@ -20,7 +20,19 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	C->flag = false;
 	C->status_cnt = 6;
 	C->time = 0;
-	C->triger_flag = false;
+	C->triger_confirm_flag = false;
+
+	S->action_status.status_1 = 0;
+	S->action_status.status_2 = 0;
+	S->action_status.status_3 = 0;
+	S->action_status.status_4 = 0;
+	S->action_status.status_5 = 0;
+	S->action_status.action_flag = false;
+	S->action_status.first_in = 0;
+	S->action_status.report_status = 0xff;
+
+
+
 	return C;
 }
 

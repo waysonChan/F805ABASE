@@ -33,7 +33,7 @@ static void ec_recv_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_
 	gprs_priv->gprs_fail_cnt = 0;
 	gprs_priv->gprs_wait_flag = false;
 
-	if (gprs_priv->gprs_send_type == GPRS_SEND_TYPE_RAM) {
+	if (gprs_priv->gprs_send_type == SEND_TYPE_RAM) {
 		tag_report_list_del(&A->tag_report);
 	} else {
 		tag_storage_delete(false);
@@ -47,88 +47,32 @@ static void ec_recv_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_
 
 static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
-	int i = 0;
-	bool flag = false;
-	
 	if (A->tag_report.filter_enable == false
 		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
 		return;
 
 	if(C->recv.frame.cmd_id == 0xD1){//过滤心跳包0x58
-		if(S->pre_cfg.dev_type & DEV_TYPE_FLAG_WIFI){
-			wifi_priv_t *wifi_priv = &C->wifi_priv;
-			for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
-				if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
-					continue;//卡号相同
-				}else{
-					flag = true;
-				}
-			}
-			if(!flag){
-				wifi_priv->wifi_fail_cnt = 0;
-				wifi_priv->wifi_wait_flag = false;
-				if (wifi_priv->wifi_send_type == WIFI_SEND_TYPE_RAM) {
-					;
-					//tag_report_list_del(&A->tag_report);
-				} else {
-					tag_storage_delete(false);
-				}
-				return;
-			}
-			wifi_tag_send_header(C, S, A);
-		}else if(S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS){
-			gprs_priv_t *gprs_priv = &C->gprs_priv;
-			for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
-				if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
-					continue;//卡号相同
-				}else{
-					flag = true;
-				}
-			}
-			if(!flag){
-				gprs_priv->gprs_fail_cnt = 0;
-				gprs_priv->gprs_wait_flag = false;
-				if (gprs_priv->gprs_send_type == GPRS_SEND_TYPE_RAM) {
-					;
-					//tag_report_list_del(&A->tag_report);
-				} else {
-					tag_storage_delete(false);
-				}
-				return;
-			}
-			gprs_tag_send_header(C, S, A);	
-		}
+		report_tag_confirm(C,S,A);
 	}
 }
 
 
 static void ec_recv_tag_confirm_trigger_tstaus(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
-	int i = 0;
-	bool flag = false;
 	if (S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
 		return;
 	if(C->recv.frame.cmd_id != 0xD2){
 		return ;
 	}else{
-		for(i = 0;i < C->recv.frame.param_len - 2; i++){
-			if(C->recv.frame.param_buf[i+1] == C->status_buf[i]){
-				continue;//相同
-			}else{
-				flag = true;
-				break;
-			}
-		}
-		if(!flag){
+		if(strncmp((const char *)C->recv.frame.param_buf+1,(const char *)C->status_buf,C->recv.frame.param_len - 2) == 0){
 			C->status_cnt = 0;
-			C->triger_flag = false;
-			if(C->status_flag){//如果是从文件里发出来的
-				C->status_flag = false;
+			C->triger_confirm_flag = false;
+			if(C->status_send_from_file){//如果是从文件里发出来的
+				C->status_send_from_file = false;
 				triger_status_delete(false);
 			}
 		}
 	}
-	//log_msg("ec_recv_tag_confirm_trigger_tstaus");
 }
 
 

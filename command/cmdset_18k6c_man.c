@@ -212,7 +212,7 @@ static void ec_18k6c_read_tid(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 	tag_param_t *T = &S->tag_param;
 	T->access_bank = RFID_18K6C_MEMORY_BANK_TID;
 	T->access_offset = 0;
-	T->access_wordnum = 4;
+	T->access_wordnum = S->pre_cfg.tid_len;//read tid len from cfg file
 	bzero(T->access_pwd, sizeof(T->access_pwd));
 
 	if (ant_index >= 1 && ant_index <= 4) {
@@ -290,7 +290,7 @@ static void ec_18k6c_read_epc_tid(r2h_connect_t *C, system_param_t *S, ap_connec
 	tag_param_t *T = &S->tag_param;
 	T->access_bank = RFID_18K6C_MEMORY_BANK_TID;
 	T->access_offset = 0;
-	T->access_wordnum = 4;
+	T->access_wordnum = S->pre_cfg.tid_len;//read tid len from cfg file
 	bzero(T->access_pwd, sizeof(T->access_pwd));
 
 	if (ant_index >= 1 && ant_index <= 4) {

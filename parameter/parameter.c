@@ -3,6 +3,8 @@
 #include "param_ether.h"
 #include "config.h"
 #include "gpio.h"
+#include "report_tag.h"
+
 
 #include <string.h>
 #include <stdio.h>
@@ -342,6 +344,10 @@ system_param_t *sys_param_new(void)
 	S->cur_ant = ant_index;
 	gettimeofday(&S->last_ant_change_time, NULL);
 
+	/* 拓展参数初始化 */
+	uint8_t get_extended_table[10];
+	cfg_get_extended_table(get_extended_table,10);
+	memcpy(S->extended_table,get_extended_table,10);
 
 	/* 工作状态 */
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) {
@@ -431,6 +437,15 @@ system_param_t *sys_param_new(void)
 	cfg_get_freq_table(S->freq_table, FREQ_MAP_LEN);
 
 	work_status_timer_int(S);
+	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC 
+		|| S->pre_cfg.work_mode == WORK_MODE_TRIGGER){ 
+		heartbeat_timer_int(S);
+		delay_timer_init(S);
+		if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI
+		   || S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS){
+			triggerstatus_timer_int(S);
+		}
+	}
 out:
 	return S;
 }
