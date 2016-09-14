@@ -1038,15 +1038,15 @@ void action_report(system_param_t *S)
 	if(S->action_status.report_status == JUDGE){
 		if(S->action_status.status_3){
 			S->action_status.report_status = STATUS_A_TO_B;
-			printf("enter successful.	 first in A\n");
+			log_msg("enter successful.	 first in A\n");
 		}else if(S->action_status.status_4){
 			S->action_status.report_status = STATUS_B_TO_A;
-			printf("enter successful.	 first in B\n");
+			log_msg("enter successful.	 first in B\n");
 		}else if(S->action_status.status_5){
-			printf("BACK TWO\n");//触发两个后又退回
+			log_msg("enter two and BACK\n");//触发两个后又退回
 			S->action_status.report_status = STATUS_USELESS;
 		}else{
-			printf("back one\n");//触发一个后又退回
+			log_msg("enter one and back\n");//触发一个后又退回
 			S->action_status.report_status = STATUS_USELESS;
 		}
 	}
@@ -1129,7 +1129,7 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				stop_read_tag(S, A);
 				S->work_status = WS_STOP;
 			}else{
-				printf("Start delay timer %d s\n",S->extended_table[0]);
+				log_msg("Start delay timer %d s\n",S->extended_table[0]);
 				delay_timer_set(S,S->extended_table[0]);
 			}
 		}

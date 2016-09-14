@@ -230,6 +230,7 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 			C->conn_type = R2H_NONE;
 			return -1;
 		} else {
+			_append_tag_time(ptag);
 			C->conn_type = R2H_TCP;
 		}
 		break;
@@ -809,7 +810,6 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 			if(status_cnt){
 				C->status_send_from_file = true;
 				triger_status_read(buf);
-				printf("timer send trigger\n");
 				send_triggerstatus(C,S,buf,sizeof(buf));
 			}else{
 				return -1;
@@ -928,9 +928,7 @@ int delay_timer_trigger(r2h_connect_t *C, system_param_t *S,ap_connect_t *A )
 		log_ret("S->delay_timer_trigger read()");
 		return -1;
 	}
-	
-	printf("#####delay_timer_trigger   #####\n");
-	
+		
 	stop_read_tag(S, A);
 	S->work_status = WS_STOP;
 	delay_timer_set(S,0);

@@ -176,13 +176,19 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			}
 			break;
 		case 240:	/* antenna index */
-			if (im_val == ANT_IDX_POLL
-				|| im_val == ANT_IDX_1
-				|| im_val == ANT_IDX_2
-				|| im_val == ANT_IDX_3
-				|| im_val == ANT_IDX_4) {
-				S->pre_cfg.ant_idx = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+			if (im_val == ANT_IDX_POLL) {
+					S->pre_cfg.ant_idx = im_val;
+					cfg_set_pre_cfg(&S->pre_cfg);				
+			} else if(im_val == ANT_IDX_1
+					|| im_val == ANT_IDX_2
+					|| im_val == ANT_IDX_3
+					|| im_val == ANT_IDX_4){
+						if(S->ant_array[im_val-1].enable){
+							S->pre_cfg.ant_idx = im_val;
+							cfg_set_pre_cfg(&S->pre_cfg);
+						} else {
+							err = ERRCODE_CMD_ERRTYPE;
+						}
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
@@ -194,7 +200,9 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				|| im_val == UPLOAD_MODE_RS485
 				|| im_val == UPLOAD_MODE_WIEGAND
 				|| im_val == UPLOAD_MODE_WIFI
-				|| im_val == UPLOAD_MODE_GPRS) {
+				|| im_val == UPLOAD_MODE_GPRS
+				|| im_val == UPLOAD_MODE_TCP
+				|| im_val == UPLOAD_MODE_UDP) {
 				S->pre_cfg.upload_mode = im_val;
 				cfg_set_pre_cfg(&S->pre_cfg);
 			} else {

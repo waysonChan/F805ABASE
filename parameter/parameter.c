@@ -441,10 +441,7 @@ system_param_t *sys_param_new(void)
 		|| S->pre_cfg.work_mode == WORK_MODE_TRIGGER){ 
 		heartbeat_timer_int(S);
 		delay_timer_init(S);
-		if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI
-		   || S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS){
-			triggerstatus_timer_int(S);
-		}
+		triggerstatus_timer_int(S);
 	}
 out:
 	return S;
