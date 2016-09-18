@@ -441,7 +441,7 @@ system_param_t *sys_param_new(void)
 		|| S->pre_cfg.work_mode == WORK_MODE_TRIGGER){ 
 		heartbeat_timer_int(S);
 		delay_timer_init(S);
-		triggerstatus_timer_int(S);
+		triggerstatus_timer_init(S);
 	}
 out:
 	return S;

@@ -157,11 +157,11 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			}
 			break;
 		case 228:   /* extended_table */
-			if (len != 10) {
+			if (len < 0 || len > 10) {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
 			}
-			memcpy(S->extended_table, cmd_param+1, len);
+			memcpy(S->extended_table, &im_val, len);
 			cfg_set_extended_table(S->extended_table,len);
 			break;
 		case 239:	/* operation type */
@@ -176,19 +176,19 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			}
 			break;
 		case 240:	/* antenna index */
-			if (im_val == ANT_IDX_POLL) {
-					S->pre_cfg.ant_idx = im_val;
-					cfg_set_pre_cfg(&S->pre_cfg);				
-			} else if(im_val == ANT_IDX_1
-					|| im_val == ANT_IDX_2
-					|| im_val == ANT_IDX_3
-					|| im_val == ANT_IDX_4){
-						if(S->ant_array[im_val-1].enable){
-							S->pre_cfg.ant_idx = im_val;
-							cfg_set_pre_cfg(&S->pre_cfg);
-						} else {
-							err = ERRCODE_CMD_ERRTYPE;
-						}
+			 if (im_val == ANT_IDX_POLL) {
+					 S->pre_cfg.ant_idx = im_val;
+					 cfg_set_pre_cfg(&S->pre_cfg);
+			 } else if(im_val == ANT_IDX_1
+					 || im_val == ANT_IDX_2
+					 || im_val == ANT_IDX_3
+					 || im_val == ANT_IDX_4){
+						 if(S->ant_array[im_val-1].enable){
+							 S->pre_cfg.ant_idx = im_val;
+							 cfg_set_pre_cfg(&S->pre_cfg);
+						 } else {
+							 err = ERRCODE_CMD_ERRTYPE;
+						 }
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;

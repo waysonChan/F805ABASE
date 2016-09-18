@@ -180,6 +180,8 @@ int work_command_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
 			_append_tag_time(ptag);
 		}
+		C->tmp_send_len = ptag->tag_len;
+		memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 	} else {
 		ret = -1;
@@ -199,6 +201,8 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 	/* 已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		_append_tag_time(ptag);
+		C->tmp_send_len = ptag->tag_len;
+		memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 		return ret;
 	}
@@ -238,7 +242,9 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 		log_msg("_finally_tag_send: invalid upload_mode");
 		return -1;
 	}
-	
+	C->tmp_send_len = ptag->tag_len;
+	memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
+
 	ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 	C->conn_type = R2H_NONE;	/* 必需 */
 	
@@ -261,9 +267,16 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 	if (C->conn_type != R2H_NONE) {
 		_append_tag_time(ptag);
 		if(S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val){
+			C->tmp_send_len = ptag->tag_len;
+			memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 			ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);	
 		}else{
-			ret = stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
+			uint64_t num_exp;
+			if (read(S->delay_timer, &num_exp, sizeof(uint64_t)) != sizeof(uint64_t)) {
+				log_ret("S->delay_timer_trigger read()");
+			}else{
+				return stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
+			}
 		}
 		return ret;
 	}
@@ -302,6 +315,8 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		C->conn_type = R2H_NONE;
 		break;
 	}
+	C->tmp_send_len = ptag->tag_len;
+	memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 	ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 	C->conn_type = R2H_NONE;	/* 必需 */
 
@@ -403,16 +418,16 @@ static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
 
 static int tag_send_flash (total_priv_t *total_priv, r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	tag_t tag;
-	
+	int ret = 0;
 	if (tag_storage_read(&tag) < 0) {
-		return -1;
+		ret = -1;
 	} else {
 		tag.has_append_time = true; /* 必需 */
 		total_priv->wait_flag = true;
 		total_priv->send_type = SEND_TYPE_NAND;
-		return _finally_tag_send(C, S, A, &tag);
+		ret = _finally_tag_send(C, S, A, &tag);
 	}
-
+	return ret;
 }
 
 int cmp_tag_list(tag_t *p){
@@ -429,39 +444,48 @@ int cmp_tag_list(tag_t *p){
 }
 
 int report_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
-	int i = 0, ret = -1, flag = 0;
-	
-	for(i = 0;i < C->recv.frame.param_len - 1- 7; i++){
-		if(C->recv.frame.param_buf[i] == C->send.wbuf[5+i]){
-			flag = 1;
-			continue;
-		} else{
-			flag = 0;
-			break;
-		}
+	int ret = -1, flag = 0;
+	total_priv_t *total_priv;
+	if(S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS)
+		total_priv = (total_priv_t *)&C->gprs_priv;
+	else if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI)
+		total_priv = (total_priv_t *)&C->wifi_priv;
+	else 
+		return -1;
+
+	//是否是当前标签
+	if(strncmp((const char *)C->recv.frame.param_buf+2,
+		(const char *)C->tmp_send_data,C->recv.frame.param_len - 3) == 0){
+		flag = 1;
+	}else{
+		flag = 0;
 	}
+	
+
 	//卡号不相同
 	if(flag == 0){
 		tag_t tag;
 		tag.ant_index = S->cur_ant;
-		tag.tag_len = C->recv.frame.param_len - 1- 7;
-		memcpy(tag.data, C->recv.frame.param_buf, C->recv.frame.param_len - 1- 7);
+		tag.has_append_time = true;//不再添加时间
+		tag.tag_len = C->tmp_send_len;
+		memcpy(tag.data, C->tmp_send_data, C->tmp_send_len);
 		ret = cmp_tag_list(&tag);
-		total_priv_t *total_priv;
-		if(S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS)
-			total_priv = (total_priv_t *)&C->gprs_priv;
-		else if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI)
-			total_priv = (total_priv_t *)&C->wifi_priv;
-		else 
-			return -1;
+	
 		tag_send_ram(total_priv,A);
 		//链表有标签
 		if(ret == 0){
 			total_priv->fail_cnt = 0;
 			total_priv->wait_flag = false;
-			ret = report_tag_send(C,S,A,&tag);
-		} if(total_priv->fail_cnt <= MAX_SEND_FAIL_TIMES){
-			ret = report_tag_send(C,S,A,&tag);
+			ret = _finally_tag_send(C,S,A,&tag);
+		}else if(total_priv->fail_cnt <= MAX_SEND_FAIL_TIMES){
+			ret = _finally_tag_send(C,S,A,&tag);
+		}
+
+	}else{
+		total_priv->fail_cnt = 0;
+		total_priv->wait_flag = false;
+		if(total_priv->send_type == SEND_TYPE_NAND ){//确认后删除
+			ret = tag_storage_delete(false);
 		}
 	}
 	return ret;
@@ -757,7 +781,7 @@ int heartbeat_timer_trigger(r2h_connect_t *C, system_param_t *S )
 }
 
 
-int triggerstatus_timer_int(system_param_t *S)
+int triggerstatus_timer_init(system_param_t *S)
 {
 	S->triggerstatus_timer = timerfd_create(CLOCK_REALTIME, 0);
 	if (S->triggerstatus_timer < 0) {
@@ -797,40 +821,40 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 		return -1;
 	}
 	/*只在WIFI 和GPRS使用GPRS*/
-	if(S->pre_cfg.upload_mode != UPLOAD_MODE_WIFI || S->pre_cfg.upload_mode != UPLOAD_MODE_GPRS){
-		return -1;
-	}	
-	
-	if(C->time++ == 10){
-		C->time = 0;
-		if(S->work_status == WS_STOP){
-			int status_cnt;
-			char buf[10];
-			status_cnt = triger_status_get_cnt();
-			if(status_cnt){
-				C->status_send_from_file = true;
-				triger_status_read(buf);
-				send_triggerstatus(C,S,buf,sizeof(buf));
-			}else{
-				return -1;
+	if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI || S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS){
+
+		if(C->time++ == 10){
+			C->time = 0;
+			if(S->work_status == WS_STOP){
+				int status_cnt;
+				char buf[10];
+				status_cnt = triger_status_get_cnt();
+				if(status_cnt){
+					C->status_send_from_file = true;
+					triger_status_read(buf);
+					log_msg("timer send trigger from flash : %d\n",status_cnt);
+					send_triggerstatus(C,S,buf,sizeof(buf));
+				}else{
+					return -1;
+				}
 			}
 		}
-	}
-	
-	if(C->triger_confirm_flag){
-		if(C->status_cnt == 1){
-			triger_status_write(C->status);
-			C->triger_confirm_flag = false;
+		
+		if(C->triger_confirm_flag){
+			if(C->status_cnt == 1){
+				triger_status_write(C->status);
+				C->triger_confirm_flag = false;
+				C->status_cnt--;
+				return 1;
+			}else if(C->status_cnt <= 0){
+				return 1;
+			}
+			C->status_send_from_file = false;
+			send_triggerstatus(C,S,C->status,sizeof(C->status));
 			C->status_cnt--;
-			return 1;
-		}else if(C->status_cnt <= 0){
-			return 1;
 		}
-		C->status_send_from_file = false;
-		send_triggerstatus(C,S,C->status,sizeof(C->status));
-		C->status_cnt--;
 	}
-	
+
 	return 0;
 }
 
@@ -891,14 +915,15 @@ int report_triggerstatus(r2h_connect_t *C, system_param_t *S )
 
 int delay_timer_set(system_param_t *S, int s)
 {
-
-	log_msg("set time %d s",s);
+	s = s * 100;
+	log_msg("set time %d ms",s);
 
 	struct itimerspec its = {
-		.it_interval.tv_sec = s,
+		.it_interval.tv_sec = 0,
 		.it_interval.tv_nsec = 0,
-		.it_value.tv_sec = s,
-		.it_value.tv_nsec = 0,
+		.it_value.tv_sec = (s / 1000),
+		.it_value.tv_nsec = (s % 1000) * 1000000,
+
 	};
 
 	if (timerfd_settime(S->delay_timer, 0, &its, NULL) < 0) {

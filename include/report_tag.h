@@ -35,7 +35,7 @@ int report_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
 int triger_status_init(void);
 int triger_status_write(char *buf);
 int triger_status_delete(bool all);
-int triggerstatus_timer_int(system_param_t *S);
+int triggerstatus_timer_init(system_param_t *S);
 int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S );
 void send_triggerstatus(r2h_connect_t *C, system_param_t *S, const void *buf, size_t sz);
 int triger_status_read(char *buf);

@@ -116,6 +116,8 @@ struct r2h_connect {
 	int wg_fd;
 	int count;
 	int time;
+	int tmp_send_len;
+	uint8_t tmp_send_data[256];	/* EPCÂë */
 	char status[10];
 	int status_cnt;
 	bool status_send_from_file;
