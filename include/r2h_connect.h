@@ -110,6 +110,7 @@ struct r2h_connect {
 	bool wifi_transparent_mode;		/* wifi 透传模式 */
 	bool accepted;		/* TCP专用 */
 	int listener;		/* TCP专用 */
+	bool wifi_connect;
 	r2h_recv_t recv;
 	r2h_send_t send;
 	int conn_type;
@@ -117,6 +118,7 @@ struct r2h_connect {
 	int count;
 	int time;
 	int tmp_send_len;
+	int set_delay_timer_flag;
 	uint8_t tmp_send_data[256];	/* EPC码 */
 	char status[10];
 	int status_cnt;

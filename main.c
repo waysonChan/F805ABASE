@@ -36,6 +36,9 @@ static int set_select_para(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 
 	maxfd = MAX(maxfd, S->delay_timer);
 	FD_SET(S->delay_timer, readset);
+
+	maxfd = MAX(maxfd, S->gpio_dece.fd);
+	FD_SET(S->gpio_dece.fd,readset);
 		
 	if(S->pre_cfg.upload_mode != UPLOAD_MODE_NONE){
 		maxfd = MAX(maxfd, S->heartbeat_timer);
@@ -45,9 +48,6 @@ static int set_select_para(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER || S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC){
 		maxfd = MAX(maxfd, S->triggerstatus_timer);
 		FD_SET(S->triggerstatus_timer, readset);
-
-		maxfd = MAX(maxfd, S->gpio_dece.fd);
-		FD_SET(S->gpio_dece.fd,readset);
 	}
 	
 	if (S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS) {
@@ -91,7 +91,7 @@ static int timer_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 	writeset = write_set;
 
 	if (FD_ISSET(A->tag_report.filter_timer, readset)) {
-		report_tag_send_timer(C, S, A);
+		report_tag_send_timer(C, S, A);		
 	}
 
 	if (FD_ISSET(S->delay_timer, readset)) {
@@ -108,11 +108,12 @@ static int timer_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 	}
 	
 	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER || S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC){
-
 		if (FD_ISSET(S->heartbeat_timer, readset)) {
-			heartbeat_timer_trigger(C, S );
+				heartbeat_timer_trigger(C, S );
 		}
-		
+	}
+
+	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER || S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC){
 		if (FD_ISSET(S->triggerstatus_timer, readset)) {
 			triggerstatus_timer_trigger(C, S );
 		}
@@ -186,12 +187,23 @@ static int tag_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, f
 		if (ap_conn_recv(A) == sizeof(RFID_PACKET_COMMON))
 			process_cmd_packets(C, S, A);
 	}
+
 	
 	if(S->pre_cfg.work_mode != WORK_MODE_COMMAND){
 		if (FD_ISSET(S->gpio_dece.fd, readset)) {
 			if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER)
 				trigger_to_read_tag(C, S, A);
 			report_triggerstatus(C,S);//ÉÏ´«´¥·¢×´Ì¬
+		}
+	}else{
+		if (FD_ISSET(S->gpio_dece.fd, readset)) {
+			unsigned char key_vals[2];
+			if(read(S->gpio_dece.fd, key_vals, sizeof(key_vals)) < 0){
+				log_ret("trigger_to_read_tag read()\n");
+				return -1;
+			} 
+			S->gpio_dece.gpio1_val = key_vals[0];
+			S->gpio_dece.gpio2_val = key_vals[1];
 		}
 	}	
 	return 0;
@@ -239,6 +251,7 @@ int main(int argc, char *argv[])
 		log_msg("r2h_connect_init error");
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		log_quit("signal error");
+
 	work_mode_pre_config(C,S,A);
 
 	while (1) {

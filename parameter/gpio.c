@@ -218,7 +218,10 @@ int set_next_active_antenna(system_param_t *S)
 		return 0;
 	}
 
-	set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
+	if(S->ant_array[S->cur_ant-1].enable)
+		set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
+	else
+		set_antenna_led_status(S->cur_ant, LED_COLOR_NONE, S->pre_cfg.dev_type);
 	set_active_antenna(S, next_ant_index);
 	return 0;
 }

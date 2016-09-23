@@ -57,13 +57,16 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		}
 #endif
 		uint8_t im_val = *(cmd_param+3);
+		pre_cfg_t tmp_val;
+		memcpy(&tmp_val,&S->pre_cfg,sizeof(pre_cfg_t));
+
 		switch (addr) {
 		case 0:		/* work mode */
 			if (im_val == WORK_MODE_COMMAND 
 				|| im_val == WORK_MODE_AUTOMATIC
 				|| im_val == WORK_MODE_TRIGGER) {
-				S->pre_cfg.work_mode = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.work_mode = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
@@ -74,8 +77,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				|| (im_val >= 0x10 && im_val <= 0x12)
 				|| (im_val >= 0x20 && im_val <= 0x22)
 				) {
-				S->pre_cfg.dev_type = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.dev_type = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
@@ -203,8 +206,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				|| im_val == UPLOAD_MODE_GPRS
 				|| im_val == UPLOAD_MODE_TCP
 				|| im_val == UPLOAD_MODE_UDP) {
-				S->pre_cfg.upload_mode = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.upload_mode = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
@@ -376,6 +379,7 @@ static void ec_ante_param_config(r2h_connect_t *C, system_param_t *S, ap_connect
 		S->ant_array[i].switch_time = cmd_param[i+8];
 		cfg_set_ant(&S->ant_array[i], i+1);
 	}
+
 
 	command_answer(C, COMMAND_PARAMETER_MAN_RF_CFG, CMD_EXE_SUCCESS, NULL, 0);
 }

@@ -37,7 +37,7 @@ static void _set_ant_power(ap_connect_t *A)
 	write_mac_register(A, HST_ANT_DESC_PORTDEF, 0x0);
 	write_mac_register(A, HST_ANT_DESC_DWELL, 2000);
 	write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
-	log_msg("rfpower = %d", A->cur_ant_power);
+	log_msg("rfpower = %d", A->cur_ant_power+20);
 }
 
 #ifdef R2000_SOFT_RESET
@@ -634,7 +634,7 @@ int r2000_set_ant_rfpower(system_param_t *S, ap_connect_t *A)
 	}
 
 	write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
-	log_msg("rfpower = %d", A->cur_ant_power);
+	log_msg("rfpower = %d", A->cur_ant_power+20);
 	return 0;
 }
 
@@ -1043,10 +1043,10 @@ void action_report(system_param_t *S)
 			S->action_status.report_status = STATUS_B_TO_A;
 			log_msg("enter successful.	 first in B\n");
 		}else if(S->action_status.status_5){
-			log_msg("enter two and BACK\n");//触发两个后又退回
+			//触发两个后又退回
 			S->action_status.report_status = STATUS_USELESS;
 		}else{
-			log_msg("enter one and back\n");//触发一个后又退回
+			//触发一个后又退回
 			S->action_status.report_status = STATUS_USELESS;
 		}
 	}
@@ -1066,11 +1066,6 @@ void action_report(system_param_t *S)
 int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	unsigned char key_vals[2];
-	
-	if(S->pre_cfg.work_mode != WORK_MODE_TRIGGER){
-		return -1;
-	}
-	
 	if(read(S->gpio_dece.fd, key_vals, sizeof(key_vals)) < 0){
 		log_ret("trigger_to_read_tag read()\n");
 		return -1;
@@ -1083,7 +1078,10 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	//report_triggerstatus(C,S);//上传状态
 	C->status_cnt = 6;
 
-	if((key_vals[0]==1) || (key_vals[1]==1)){//接入设备	
+	if(S->pre_cfg.work_mode != WORK_MODE_TRIGGER){
+		return -1;
+	}
+	if((key_vals[0]==1) || (key_vals[1]==1)){//触发设备	
 		action_identify(S,key_vals[0],key_vals[1]);
 		if(S->work_status == WS_STOP)
 		{
@@ -1116,11 +1114,12 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			default:
 				S->work_status = WS_STOP;
 				log_msg("invalid operate mode");
+				return -1;
 			}
 			if(r2000_error_check(C, S, A)<0)
 				log_msg("start error");
-			auto_read_tag(C, S, A);
 		}
+		auto_read_tag(C, S, A);
 	}else{//未触发设备
 		if(S->work_status != WS_STOP){
 			action_report(S);
@@ -1129,8 +1128,9 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				stop_read_tag(S, A);
 				S->work_status = WS_STOP;
 			}else{
-				log_msg("Start delay timer %d s\n",S->extended_table[0]);
+				log_msg("Start delay timer %d ms\n",S->extended_table[0] * 100);
 				delay_timer_set(S,S->extended_table[0]);
+				C->set_delay_timer_flag = 1;
 			}
 		}
 	}

@@ -312,7 +312,7 @@ system_param_t *sys_param_new(void)
 		system("rm -f /f806/gprs-enable");
 	}
 
-	char *sw_ver = "1.4.11";
+	char *sw_ver = "1.4.12";
 	strncpy(S->sysinfo.mcu_swrev, sw_ver, strlen(sw_ver));
 
 	/* 配置 eth0 */
@@ -386,10 +386,20 @@ system_param_t *sys_param_new(void)
 	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER) {
 		switch (S->pre_cfg.oper_mode) {
 		case OPERATE_READ_EPC:
+			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+				S->work_status = WS_READ_EPC_FIXED;
+				S->cur_ant = S->pre_cfg.ant_idx;
+			} else {
+				S->work_status = WS_READ_EPC_INTURN;
+			}
+			break;
 		case OPERATE_READ_TID:
 			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+				S->work_status = WS_READ_TID_FIXED;
 				S->cur_ant = S->pre_cfg.ant_idx;
-			}		
+			} else {
+				S->work_status = WS_READ_TID_INTURN;
+			}			
 			break;
 		case OPERATE_READ_USER:
 			/* 读用户区不支持轮询模式 */

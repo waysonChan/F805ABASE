@@ -258,68 +258,73 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 	
 	if(C->conn_type == R2H_NONE){
 		cmd_id = S->pre_cfg.oper_mode;
-	} else if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
-		log_msg("_finally_tag_send: invalid cmd_id");
-		return -1;
-	}
-	
-	/* 已建立连接 */
-	if (C->conn_type != R2H_NONE) {
+		switch (S->pre_cfg.upload_mode) {
+		case UPLOAD_MODE_WIEGAND:
+			return tag_report_list_add(ptag, &A->tag_report);
+		case UPLOAD_MODE_RS232:
+			_append_tag_time(ptag);
+			C->conn_type = R2H_RS232;
+			break;
+		case UPLOAD_MODE_RS485:
+			C->conn_type = R2H_RS485;
+			break;
+		case UPLOAD_MODE_WIFI:
+			_append_tag_time(ptag);
+			C->conn_type = R2H_WIFI;
+			break;
+		case UPLOAD_MODE_GPRS:
+			_append_tag_time(ptag);
+			C->conn_type = R2H_GPRS;
+			break;
+		case UPLOAD_MODE_UDP:
+			_append_tag_time(ptag);
+			C->conn_type = R2H_UDP;
+			break;		
+		case UPLOAD_MODE_TCP:
+			if (C->accepted == false){
+				C->conn_type = R2H_NONE;
+				return -1;
+			} else {
+				_append_tag_time(ptag);
+				C->conn_type = R2H_TCP;
+			}
+			break;
+		default:
+			C->conn_type = R2H_NONE;
+			break;
+		}
+		C->tmp_send_len = ptag->tag_len;
+		memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
+		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
+		C->conn_type = R2H_NONE;	/* 必需 */
+	} 
+	else {
+		/* 已建立连接 */
+		if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
+			log_msg("_finally_tag_send: invalid cmd_id");
+			if((C->wifi_priv.wifi_send_type == SEND_TYPE_NAND||
+				C->gprs_priv.gprs_send_type == SEND_TYPE_NAND)
+				&& C->conn_type != R2H_NONE)
+				cmd_id = S->pre_cfg.oper_mode;
+			else
+				return -1;
+		}
+
 		_append_tag_time(ptag);
-		if(S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val){
+		
+		if(S->gpio_dece.gpio1_val == 1
+			|| S->gpio_dece.gpio2_val == 1
+			|| C->set_delay_timer_flag == 1
+			|| C->wifi_priv.wifi_send_type == SEND_TYPE_NAND
+			|| C->gprs_priv.gprs_send_type == SEND_TYPE_NAND){
 			C->tmp_send_len = ptag->tag_len;
 			memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 			ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);	
-		}else{
-			uint64_t num_exp;
-			if (read(S->delay_timer, &num_exp, sizeof(uint64_t)) != sizeof(uint64_t)) {
-				log_ret("S->delay_timer_trigger read()");
-			}else{
-				return stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
-			}
+		} else if (C->set_delay_timer_flag == 0){
+				ret = stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
 		}
-		return ret;
 	}
-
-	switch (S->pre_cfg.upload_mode) {
-	case UPLOAD_MODE_WIEGAND:
-		return tag_report_list_add(ptag, &A->tag_report);
-	case UPLOAD_MODE_RS232:
-		_append_tag_time(ptag);
-		C->conn_type = R2H_RS232;
-		break;
-	case UPLOAD_MODE_RS485:
-		C->conn_type = R2H_RS485;
-		break;
-	case UPLOAD_MODE_WIFI:
-		_append_tag_time(ptag);
-		C->conn_type = R2H_WIFI;
-		break;
-	case UPLOAD_MODE_GPRS:
-		_append_tag_time(ptag);
-		C->conn_type = R2H_GPRS;
-		break;
-	case UPLOAD_MODE_UDP:
-		_append_tag_time(ptag);
-		C->conn_type = R2H_UDP;
-		break;		
-	case UPLOAD_MODE_TCP:
-		if (C->accepted == false){
-			C->conn_type = R2H_NONE;
-			return -1;
-		} else {
-			C->conn_type = R2H_TCP;
-		}
-		break;
-	default:
-		C->conn_type = R2H_NONE;
-		break;
-	}
-	C->tmp_send_len = ptag->tag_len;
-	memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
-	ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
-	C->conn_type = R2H_NONE;	/* 必需 */
-
+	
 	return ret;
 }
 
@@ -358,7 +363,6 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 		log_msg("report_tag_send: time() error!");
 		return -1;
 	}
-
 
 	/* 2.I802S只能用1号天线读卡 */
 	if (((S->pre_cfg.dev_type & DEV_TYPE_BASE_MASK) == DEV_TYPE_BASE_I802S_ANT1)
@@ -416,6 +420,7 @@ static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
 	
 }
 
+#if 0
 static int tag_send_flash (total_priv_t *total_priv, r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	tag_t tag;
 	int ret = 0;
@@ -429,7 +434,7 @@ static int tag_send_flash (total_priv_t *total_priv, r2h_connect_t *C, system_pa
 	}
 	return ret;
 }
-
+#endif
 int cmp_tag_list(tag_t *p){
 		/* 1.存在性检查 */
 		struct list_head *l;
@@ -470,12 +475,14 @@ int report_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 		tag.tag_len = C->tmp_send_len;
 		memcpy(tag.data, C->tmp_send_data, C->tmp_send_len);
 		ret = cmp_tag_list(&tag);
-	
+
 		tag_send_ram(total_priv,A);
+		
 		//链表有标签
 		if(ret == 0){
 			total_priv->fail_cnt = 0;
 			total_priv->wait_flag = false;
+			total_priv->send_type = SEND_TYPE_RAM;
 			ret = _finally_tag_send(C,S,A,&tag);
 		}else if(total_priv->fail_cnt <= MAX_SEND_FAIL_TIMES){
 			ret = _finally_tag_send(C,S,A,&tag);
@@ -484,8 +491,10 @@ int report_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	}else{
 		total_priv->fail_cnt = 0;
 		total_priv->wait_flag = false;
+		log_msg("total_priv->send_type = %d",total_priv->send_type);
 		if(total_priv->send_type == SEND_TYPE_NAND ){//确认后删除
 			ret = tag_storage_delete(false);
+			total_priv->send_type = SEND_TYPE_RAM;
 		}
 	}
 	return ret;
@@ -493,6 +502,15 @@ int report_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 
 int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
+	tag_report_t *tag_report = &A->tag_report;
+	int ret = 0;
+	
+	if (!list_empty(&tag_report_list)) {
+		ret = _tag_storage_write_all(tag_report);
+	} 
+	return ret;
+
+#if 0
 	int ret;
 	total_priv_t *total_priv;
 
@@ -507,11 +525,23 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	}
 
 	return ret;
+#endif
 }
 
 
 int wifi_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
+	tag_report_t *tag_report = &A->tag_report;
+	int ret = 0;
+
+	/* 1.处理链表tag */
+	if (!list_empty(&tag_report_list)) {
+		log_msg("---- writting tag in flash ----");
+		ret = _tag_storage_write_all(tag_report);
+	} 
+	return ret;
+
+#if 0
 	int ret;
 	total_priv_t *total_priv;
 
@@ -526,6 +556,7 @@ int wifi_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	}
 
 	return ret;
+#endif
 }
 
 
@@ -545,13 +576,36 @@ int TCP_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		if (tag_storage_read(&tag) < 0 || C->accepted == false) {
 			ret = -1;
 		} else {
-			_finally_tag_send(C, S, A, &tag);
-			ret = tag_storage_delete(false);
+			ret = _finally_tag_send(C, S, A, &tag);
+			if(ret > -1) 
+				ret = tag_storage_delete(false);
 		}
 	}
 	return ret;
 }
 
+
+int empty_list_to_send_flash(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	int ret = 0;
+	if(list_empty(&tag_report_list)){
+		tag_t tag;
+		if (tag_storage_read(&tag) < 0) {
+			return ret;
+		} else {
+			if(S->pre_cfg.dev_type == DEV_TYPE_FLAG_GPRS){
+				C->gprs_priv.gprs_send_type = SEND_TYPE_NAND;
+			}else if(S->pre_cfg.dev_type == DEV_TYPE_FLAG_WIFI){
+				C->wifi_priv.wifi_send_type = SEND_TYPE_NAND;
+			}
+			log_msg("empty_list_to_send_flash : %d",tag_storage_get_cnt());
+			tag.has_append_time = true;//不再添加时间
+			_finally_tag_send(C, S, A, &tag);
+		}
+		return 1;
+	}
+	return ret;
+}
 
 int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
@@ -572,16 +626,31 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if(S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE){
 		switch(S->pre_cfg.upload_mode){
 		case UPLOAD_MODE_GPRS:
-			if(C->conn_type == R2H_GPRS && S->work_status == WS_STOP)
+			if(C->conn_type != R2H_GPRS)
 				break;
-			else
-				gprs_tag_send_header(C, S, A);
+			else{
+				if(!empty_list_to_send_flash(C, S, A)){
+					if(C->gprs_priv.connected){
+						goto out;
+					}else{
+						gprs_tag_send_header(C, S, A);
+					}
+				}
+			}
 			break;
 		case UPLOAD_MODE_WIFI:
 			if(C->conn_type == R2H_WIFI && S->work_status == WS_STOP)
 				break;
-			else
-				wifi_tag_send_header(C, S, A);
+			else{
+				if(!empty_list_to_send_flash(C, S, A)){
+					if(C->wifi_connect){
+						C->wifi_connect = false;
+						goto out;
+					}else{
+						wifi_tag_send_header(C, S, A);
+					}
+				}
+			}
 			break;
 		case UPLOAD_MODE_TCP:
 			TCP_tag_send_header(C, S, A);
@@ -953,7 +1022,7 @@ int delay_timer_trigger(r2h_connect_t *C, system_param_t *S,ap_connect_t *A )
 		log_ret("S->delay_timer_trigger read()");
 		return -1;
 	}
-		
+	C->set_delay_timer_flag = 0;
 	stop_read_tag(S, A);
 	S->work_status = WS_STOP;
 	delay_timer_set(S,0);

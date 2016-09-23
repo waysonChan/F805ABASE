@@ -50,7 +50,7 @@ static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_con
 	if (A->tag_report.filter_enable == false
 		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
 		return;
-
+	C->wifi_connect = true;
 	if(C->recv.frame.cmd_id == 0xD1){//¹ıÂËĞÄÌø°ü0x58
 		report_tag_confirm(C,S,A);
 	}
