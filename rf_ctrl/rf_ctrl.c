@@ -1071,16 +1071,17 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return -1;
 	} 
 	
-	delay_timer_set(S,0);
-	C->triger_confirm_flag = true;
 	S->gpio_dece.gpio1_val = key_vals[0];
 	S->gpio_dece.gpio2_val = key_vals[1];
 	//report_triggerstatus(C,S);//上传状态
-	C->status_cnt = 6;
 
 	if(S->pre_cfg.work_mode != WORK_MODE_TRIGGER){
 		return -1;
 	}
+	
+	C->triger_confirm_flag = true;
+	C->status_cnt = 6;
+	delay_timer_set(S,0);
 	if((key_vals[0]==1) || (key_vals[1]==1)){//触发设备	
 		action_identify(S,key_vals[0],key_vals[1]);
 		if(S->work_status == WS_STOP)

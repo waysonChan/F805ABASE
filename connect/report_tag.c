@@ -889,7 +889,7 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 		log_ret("S->triggerstatus_timer_trigger read()");
 		return -1;
 	}
-	/*只在WIFI 和GPRS使用GPRS*/
+	/*只在WIFI 和GPRS使用*/
 	if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI || S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS){
 
 		if(C->time++ == 10){
