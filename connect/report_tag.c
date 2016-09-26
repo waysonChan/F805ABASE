@@ -297,13 +297,12 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 		C->conn_type = R2H_NONE;	/* 必需 */
-	} 
-	else {
-		/* 已建立连接 */
+	} else{
 		if (_get_cmd_id(S->work_status, &cmd_id) < 0) {
 			log_msg("_finally_tag_send: invalid cmd_id");
 			if((C->wifi_priv.wifi_send_type == SEND_TYPE_NAND||
-				C->gprs_priv.gprs_send_type == SEND_TYPE_NAND)
+				C->gprs_priv.gprs_send_type == SEND_TYPE_NAND ||
+				C->tcp_send_symbol == SEND_TYPE_NAND)
 				&& C->conn_type != R2H_NONE)
 				cmd_id = S->pre_cfg.oper_mode;
 			else
@@ -316,7 +315,8 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 			|| S->gpio_dece.gpio2_val == 1
 			|| C->set_delay_timer_flag == 1
 			|| C->wifi_priv.wifi_send_type == SEND_TYPE_NAND
-			|| C->gprs_priv.gprs_send_type == SEND_TYPE_NAND){
+			|| C->gprs_priv.gprs_send_type == SEND_TYPE_NAND
+			|| C->tcp_send_symbol == SEND_TYPE_NAND){
 			C->tmp_send_len = ptag->tag_len;
 			memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 			ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);	
@@ -576,9 +576,13 @@ int TCP_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		if (tag_storage_read(&tag) < 0 || C->accepted == false) {
 			ret = -1;
 		} else {
+			tag.has_append_time = true;
+			C->tcp_send_symbol = SEND_TYPE_NAND;
 			ret = _finally_tag_send(C, S, A, &tag);
-			if(ret > -1) 
+			if(ret > -1) {
 				ret = tag_storage_delete(false);
+				C->tcp_send_symbol = SEND_TYPE_RAM;
+			}
 		}
 	}
 	return ret;
@@ -626,16 +630,11 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if(S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE){
 		switch(S->pre_cfg.upload_mode){
 		case UPLOAD_MODE_GPRS:
-			if(C->conn_type != R2H_GPRS)
-				break;
-			else{
-				if(!empty_list_to_send_flash(C, S, A)){
-					if(C->gprs_priv.connected){
-						goto out;
-					}else{
-						gprs_tag_send_header(C, S, A);
-					}
-				}
+			if(C->gprs_priv.connected){
+				empty_list_to_send_flash(C, S, A);
+			}else{
+				if(C->conn_type == R2H_NONE)
+					gprs_tag_send_header(C, S, A);
 			}
 			break;
 		case UPLOAD_MODE_WIFI:

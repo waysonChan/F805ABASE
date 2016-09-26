@@ -22,6 +22,7 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	C->time = 0;
 	C->triger_confirm_flag = false;
 	C->wifi_connect = false;
+	C->tcp_send_symbol = SEND_TYPE_RAM;
 	C->set_delay_timer_flag = 0;
 	S->action_status.status_1 = 0;
 	S->action_status.status_2 = 0;

@@ -58,8 +58,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 #endif
 		uint8_t im_val = *(cmd_param+3);
 		pre_cfg_t tmp_val;
-		memcpy(&tmp_val,&S->pre_cfg,sizeof(pre_cfg_t));
-
+		cfg_get_pre_cfg(&tmp_val);
+		
 		switch (addr) {
 		case 0:		/* work mode */
 			if (im_val == WORK_MODE_COMMAND 
@@ -118,13 +118,15 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			break;
 		case 160:	/* weigand start */
 			S->pre_cfg.wg_start = im_val;
-			cfg_set_pre_cfg(&S->pre_cfg);
+			tmp_val.wg_start = im_val;
+			cfg_set_pre_cfg(&tmp_val);
 			break;
 		case 161:	/* weigand length */
 			if (im_val == WG_LEN_26
 				|| im_val == WG_LEN_34) {
 				S->pre_cfg.wg_len = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.wg_len = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
@@ -135,7 +137,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				|| im_val == TID_LEN_6
 				|| im_val == TID_LEN_8) {
 				S->pre_cfg.tid_len = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.tid_len = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
@@ -147,7 +150,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				goto out;
 			} else {
 				S->pre_cfg.wg_pulse_width = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.wg_pulse_width = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			}
 			break;
 		case 221:	/* pulse periods */
@@ -156,7 +160,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				goto out;
 			} else {
 				S->pre_cfg.wg_pulse_periods = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.wg_pulse_periods = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			}
 			break;
 		case 228:   /* extended_table */
@@ -172,7 +177,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				|| im_val == OPERATE_READ_TID
 				|| im_val == OPERATE_READ_USER) {
 				S->pre_cfg.oper_mode = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.oper_mode = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
@@ -181,14 +187,16 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		case 240:	/* antenna index */
 			 if (im_val == ANT_IDX_POLL) {
 					 S->pre_cfg.ant_idx = im_val;
-					 cfg_set_pre_cfg(&S->pre_cfg);
+					 tmp_val.ant_idx = im_val;
+					 cfg_set_pre_cfg(&tmp_val);
 			 } else if(im_val == ANT_IDX_1
 					 || im_val == ANT_IDX_2
 					 || im_val == ANT_IDX_3
 					 || im_val == ANT_IDX_4){
 						 if(S->ant_array[im_val-1].enable){
 							 S->pre_cfg.ant_idx = im_val;
-							 cfg_set_pre_cfg(&S->pre_cfg);
+							 tmp_val.ant_idx = im_val;
+							 cfg_set_pre_cfg(&tmp_val);
 						 } else {
 							 err = ERRCODE_CMD_ERRTYPE;
 						 }
@@ -203,7 +211,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				|| im_val == UPLOAD_MODE_RS485
 				|| im_val == UPLOAD_MODE_WIEGAND
 				|| im_val == UPLOAD_MODE_WIFI
-				|| im_val == UPLOAD_MODE_GPRS
+				|| im_val == UPLOAD_MODE_GPRS	
 				|| im_val == UPLOAD_MODE_TCP
 				|| im_val == UPLOAD_MODE_UDP) {
 				tmp_val.upload_mode = im_val;
@@ -217,7 +225,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			if (im_val == NAND_FLASH_ENBABLE
 				|| im_val == NAND_FLASH_DISABLE) {
 				S->pre_cfg.flash_enable = im_val;
-				cfg_set_pre_cfg(&S->pre_cfg);
+				tmp_val.flash_enable = im_val;
+				cfg_set_pre_cfg(&tmp_val);
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;

@@ -109,6 +109,7 @@ typedef struct {
 struct r2h_connect {
 	bool wifi_transparent_mode;		/* wifi 透传模式 */
 	bool accepted;		/* TCP专用 */
+	int tcp_send_symbol;
 	int listener;		/* TCP专用 */
 	bool wifi_connect;
 	r2h_recv_t recv;
