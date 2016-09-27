@@ -34,13 +34,13 @@ static int set_select_para(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 	maxfd = MAX(maxfd, S->work_status_timer);
 	FD_SET(S->work_status_timer, readset);
 
-	maxfd = MAX(maxfd, S->delay_timer);
-	FD_SET(S->delay_timer, readset);
-
 	maxfd = MAX(maxfd, S->gpio_dece.fd);
 	FD_SET(S->gpio_dece.fd,readset);
 	
 	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER || S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC){
+		maxfd = MAX(maxfd, S->delay_timer);
+		FD_SET(S->delay_timer, readset);
+	
 		maxfd = MAX(maxfd, S->triggerstatus_timer);
 		FD_SET(S->triggerstatus_timer, readset);
 		
@@ -91,10 +91,6 @@ static int timer_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 	if (FD_ISSET(A->tag_report.filter_timer, readset)) {
 		report_tag_send_timer(C, S, A);		
 	}
-
-	if (FD_ISSET(S->delay_timer, readset)) {
-		delay_timer_trigger(C,S,A);
-	}
 	
 	if (FD_ISSET(S->work_status_timer, readset)) {
 		work_status_timer_trigger(C, S);
@@ -106,6 +102,10 @@ static int timer_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 	}
 	
 	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER || S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC){
+		if (FD_ISSET(S->delay_timer, readset)) {
+			delay_timer_trigger(C,S,A);
+		}		
+		
 		if (FD_ISSET(S->heartbeat_timer, readset)) {
 				heartbeat_timer_trigger(C, S );
 		}

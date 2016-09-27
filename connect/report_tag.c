@@ -211,7 +211,7 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 	case UPLOAD_MODE_WIEGAND:
 		return tag_report_list_add(ptag, &A->tag_report);
 	case UPLOAD_MODE_RS232:
-		_append_tag_time(ptag);
+		//_append_tag_time(ptag);
 		C->conn_type = R2H_RS232;
 		break;
 	case UPLOAD_MODE_RS485:
