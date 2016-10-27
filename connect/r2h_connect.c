@@ -17,7 +17,6 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	C->send.wlen = 0;
 	C->conn_type = R2H_NONE;
 	C->wifi_transparent_mode = false;
-	C->flag = false;
 	C->status_cnt = 6;
 	C->time = 0;
 	C->triger_confirm_flag = false;

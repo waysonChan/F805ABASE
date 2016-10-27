@@ -107,7 +107,11 @@ static int timer_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 		}		
 		
 		if (FD_ISSET(S->heartbeat_timer, readset)) {
-				heartbeat_timer_trigger(C, S );
+			heartbeat_timer_trigger(C, S );
+		}
+
+		if (FD_ISSET(S->delay_timer, readset)) {
+			delay_timer_trigger(C,S,A);
 		}
 		
 		if (FD_ISSET(S->triggerstatus_timer, readset)) {
@@ -146,28 +150,19 @@ static int conn_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 	for (i = 0; i < R2H_TOTAL; i++) {
 		if (C->r2h[i].fd != -1 && FD_ISSET(C->r2h[i].fd, readset)) {
 			ret = r2h_connect_check_in(C, i);
-			if((S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI && C->conn_type == R2H_WIFI)
-					|| (S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS && C->conn_type == R2H_GPRS)){
-				C->flag = true;
-				C->recv.rlen = ret;
-				while(C->recv.rlen){
-					if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
-						command_execute(C, S, A);
-							C->conn_type = i;
-					}else{
-							C->conn_type = cnn;
-					}
-				}
-				C->flag = false;
-				C->count = 0;
-			}else{
-				C->flag = false;
+			C->recv.rlen = ret;
+			while(C->recv.rlen) {
 				if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
 					command_execute(C, S, A);
-				}else{
-						C->conn_type = cnn;
+					if((S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI && C->conn_type == R2H_WIFI)
+						|| (S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS && C->conn_type == R2H_GPRS)){
+						C->conn_type = i;
+					}
+				} else {
+					C->conn_type = cnn;
 				}
 			}
+			C->count = 0;
 		}
 	}
 	return 0;
@@ -184,11 +179,13 @@ static int tag_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, f
 			process_cmd_packets(C, S, A);
 	}
 
-	if (FD_ISSET(S->gpio_dece.fd, readset)) {			
+	
+	if (FD_ISSET(S->gpio_dece.fd, readset)) {
 		trigger_to_read_tag(C, S, A);
 		if(S->pre_cfg.work_mode != WORK_MODE_COMMAND)
 			report_triggerstatus(C,S);//ÉÏ´«´¥·¢×´Ì¬
 	}
+
 	return 0;
 }
 

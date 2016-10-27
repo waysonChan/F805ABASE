@@ -126,7 +126,6 @@ struct r2h_connect {
 	bool status_send_from_file;
 	bool triger_confirm_flag;
 	char status_buf[10];
-	bool flag;
 	gprs_priv_t gprs_priv;
 	wifi_priv_t wifi_priv;
 	total_priv_t total_priv;

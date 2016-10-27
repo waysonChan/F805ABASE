@@ -79,128 +79,73 @@ static inline uint8_t _r2h_frame_parse_byte(r2h_connect_t *C, uint8_t byte)
 	return FRAME_UNCOMPLETE;
 }
 
-int r2h_frame_parse(r2h_connect_t *C, int result)
+static inline int r2h_frame_parse_buf(r2h_connect_t *C)
 {
 	uint8_t *ptr;
 	r2h_frame_t *F = &C->recv.frame;
-
-	if (result > 0) {
-		if(C->flag){
-			;
-			//C->recv.rlen = result;
-		}else{
-			C->recv.rlen = result;
+	
+	ptr = &C->recv.rbuf[C->count];
+		
+	for (; C->recv.rlen > 0; ptr++) {
+		C->recv.rlen--;
+		C->count++;
+		switch (*ptr) {
+		case FRAME_HEADER:
+			_r2h_frame_init(C);
+			F->last_byte = 0x0;	/* 注意:帧头 0x55 不校验 */
+			continue;
+		case SUBSTITUTE_DATA_56:
+			if (SUBSTITUTE_DATA_56 == F->last_byte) {
+				*ptr = FRAME_HEADER;
+			} else {
+				F->last_byte = SUBSTITUTE_DATA_56;
+				continue;	/* 注意:如果上一字节不是0x56则把此0x56留到下次再做处理 */
+			}
+			break;
+		case SUBSTITUTE_DATA_57:
+			if (SUBSTITUTE_DATA_56 == F->last_byte) {
+				*ptr = SUBSTITUTE_DATA_56;
+			}
+			break;
+		default:
+			if (SUBSTITUTE_DATA_56 == F->last_byte) {
+				_r2h_frame_reset(C);
+				return FRAME_PROTOCOLERROR;	/* 按照协议不可能出现这种情况 */
+			}
 		}
-	} else if (result == 0 && 
+
+		F->last_byte = 0;
+		switch (_r2h_frame_parse_byte(C, *ptr)) {
+		case FRAME_COMPLETE:
+			return FRAME_COMPLETE;
+		case FRAME_UNCOMPLETE:
+			break;
+		case FRAME_CRCERROR:
+		case FRAME_PAMERROR:
+		case FRAME_UNKNOWERROR:
+		default:
+			log_msg("r2h_frame_parse error");
+			goto out;
+		}
+	}
+out:
+	return FRAME_UNCOMPLETE;
+}
+
+int r2h_frame_parse(r2h_connect_t *C, int result)
+{	
+	int ret = FRAME_UNCOMPLETE;
+	if(result > 0){
+			ret = r2h_frame_parse_buf(C);
+	}else if (result == 0 && 
 		(C->conn_type == R2H_TCP || C->conn_type == R2H_USB || C->conn_type == R2H_GPRS)) {
 		/* EOF */
 		log_msg("recv EOF, close client. <conn_type = %d>", C->conn_type);
 		r2h_connect_close_client(C);
-		goto out;
 	} else if (result == -1) {
 		log_msg("recv error, close client.");
 		r2h_connect_close_client(C);
-		goto out;
-	} else {
-		/* result == -R2H_RS485 */
-		goto out;
-	}
-
-
-
-	if(C->flag){
-		for (ptr=&C->recv.rbuf[C->count]; C->recv.rlen>0; C->recv.rlen--, ptr++,C->count++) {
-			switch (*ptr) {
-			case FRAME_HEADER:
-				_r2h_frame_init(C);
-				F->last_byte = 0x0;	/* 注意:帧头 0x55 不校验 */
-				continue;
-			case SUBSTITUTE_DATA_56:
-				if (SUBSTITUTE_DATA_56 == F->last_byte) {
-					*ptr = FRAME_HEADER;
-				} else {
-					F->last_byte = SUBSTITUTE_DATA_56;
-					continue;	/* 注意:如果上一字节不是0x56则把此0x56留到下次再做处理 */
-				}
-				break;
-			case SUBSTITUTE_DATA_57:
-				if (SUBSTITUTE_DATA_56 == F->last_byte) {
-					*ptr = SUBSTITUTE_DATA_56;
-				}
-				break;
-			default:
-				if (SUBSTITUTE_DATA_56 == F->last_byte) {
-					_r2h_frame_reset(C);
-					return FRAME_PROTOCOLERROR;	/* 按照协议不可能出现这种情况 */
-				}
-			}
-
-			F->last_byte = 0;
-			switch (_r2h_frame_parse_byte(C, *ptr)) {
-			case FRAME_COMPLETE:
-				return FRAME_COMPLETE;
-			case FRAME_UNCOMPLETE:
-				break;
-			case FRAME_CRCERROR:
-			case FRAME_PAMERROR:
-			case FRAME_UNKNOWERROR:
-			default:
-				log_msg("r2h_frame_parse error");
-				goto out;
-			}
-		}
-	}else{
-		for (ptr=C->recv.rbuf; C->recv.rlen>0; C->recv.rlen--, ptr++) {
-			switch (*ptr) {
-			case FRAME_HEADER:
-				_r2h_frame_init(C);
-				F->last_byte = 0x0;	/* 注意:帧头 0x55 不校验 */
-				continue;
-			case SUBSTITUTE_DATA_56:
-				if (SUBSTITUTE_DATA_56 == F->last_byte) {
-					*ptr = FRAME_HEADER;
-				} else {
-					F->last_byte = SUBSTITUTE_DATA_56;
-					continue;	/* 注意:如果上一字节不是0x56则把此0x56留到下次再做处理 */
-				}
-				break;
-			case SUBSTITUTE_DATA_57:
-				if (SUBSTITUTE_DATA_56 == F->last_byte) {
-					*ptr = SUBSTITUTE_DATA_56;
-				}
-				break;
-			default:
-				if (SUBSTITUTE_DATA_56 == F->last_byte) {
-					_r2h_frame_reset(C);
-					return FRAME_PROTOCOLERROR;	/* 按照协议不可能出现这种情况 */
-				}
-			}
-			
-
-			F->last_byte = 0;
-			switch (_r2h_frame_parse_byte(C, *ptr)) {
-			case FRAME_COMPLETE:
-				return FRAME_COMPLETE;
-			case FRAME_UNCOMPLETE:
-				break;
-			case FRAME_CRCERROR:
-			case FRAME_PAMERROR:
-			case FRAME_UNKNOWERROR:
-			default:
-				log_msg("r2h_frame_parse error");
-				goto out;
-			}
-		}
-	}
-
-	
-out:
-	if(C->flag){
-		;
-		//C->recv.rlen = 0;
-	}else{
-		C->recv.rlen = 0;
-	}
+	} 
 	C->recv.frame.frame_state = FRAME_READY_STATE;
-	return FRAME_UNCOMPLETE;
+	return ret;
 }

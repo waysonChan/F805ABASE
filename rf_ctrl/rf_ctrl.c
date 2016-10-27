@@ -874,6 +874,18 @@ uint32_t r2000_oem_read(ap_connect_t *A, uint16_t addr)
 	return buf[28] + (buf[29] << 8) + (buf[30] << 16) + (buf[31] << 24);	
 }
 
+int r2000_oem_write(ap_connect_t *A, uint16_t addr, uint32_t data)
+{
+	int ret = 0;
+	uint8_t buf[256];
+	write_mac_register(A, HST_OEM_ADDR, addr);
+	write_mac_register(A, HST_OEM_DATA, data);
+	write_mac_register(A, HST_CMD, CMD_WROEM);
+	
+	ret = rs232_read(A->fd, buf, 32);
+	return ret;
+}
+
 #define FREQ_STD_GB	1
 #define FREQ_STD_FCC	2
 #define FREQ_STD_CE	3

@@ -39,6 +39,7 @@ int r2000_freq_config(system_param_t *S, ap_connect_t *A);
 
 int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
 uint32_t r2000_oem_read(ap_connect_t *A, uint16_t addr);
+int r2000_oem_write(ap_connect_t *A, uint16_t addr, uint32_t data);
 
 
 #endif	/* _RF_CTRL_H */

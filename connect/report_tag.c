@@ -114,30 +114,6 @@ static int _append_tag_time(tag_t *ptag)
 	return 0;
 }
 
-static int _append_trigger_time(char *buf)
-{
-	time_t first_time;
-	struct tm *ptm;
-	uint8_t time_buf[7];
-	time(&first_time);
-	
-	ptm = localtime(&first_time);
-	time_buf[0] = convert_hex(ptm->tm_sec);		/* 秒 */
-	time_buf[1] = convert_hex(ptm->tm_min);		/* 分 */
-	time_buf[2] = convert_hex(ptm->tm_hour);	/* 时 */
-	time_buf[3] = convert_hex(ptm->tm_wday);	/* 星期 */
-	time_buf[4] = convert_hex(ptm->tm_mday);	/* 日 */
-	time_buf[5] = convert_hex(ptm->tm_mon + 1);	/* 月 */
-	time_buf[6] = convert_hex(ptm->tm_year % 100);	/* 年 */
-
-	memcpy(buf + 2, time_buf, 7);
-
-	return 0;
-}
-
-
-
-
 static inline int _get_cmd_id(int work_status, uint8_t *cmd_id)
 {
 	switch (work_status) {
@@ -198,6 +174,9 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 		log_msg("_finally_tag_send: invalid cmd_id");
 		return -1;
 	}
+
+
+
 	/* 已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		_append_tag_time(ptag);
@@ -308,9 +287,8 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 			else
 				return -1;
 		}
-
-		_append_tag_time(ptag);
 		
+		_append_tag_time(ptag);
 		if(S->gpio_dece.gpio1_val == 1
 			|| S->gpio_dece.gpio2_val == 1
 			|| C->set_delay_timer_flag == 1
@@ -324,14 +302,13 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 				ret = stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
 		}
 	}
-	
+
 	return ret;
 }
 
 
 static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag) {
 	int ret = 0;
-	
 	switch(S->pre_cfg.work_mode) {
 	case WORK_MODE_COMMAND:
 		ret = work_command_send_tag(C,S,A,ptag);
@@ -402,10 +379,8 @@ static int _tag_storage_write_all(tag_report_t *tag_report)
 
 #define MAX_SEND_FAIL_TIMES	5
 
-
 static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
 	tag_report_t *tag_report = &A->tag_report;
-	
 	if (total_priv->wait_flag && (total_priv->fail_cnt++ >= MAX_SEND_FAIL_TIMES)) {
 		/* 将链表中tag写入文件 */
 		total_priv->fail_cnt = 0;
@@ -417,24 +392,9 @@ static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
 		total_priv->send_type = SEND_TYPE_RAM;
 		return 0;
 	}
-	
 }
 
-#if 0
-static int tag_send_flash (total_priv_t *total_priv, r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
-	tag_t tag;
-	int ret = 0;
-	if (tag_storage_read(&tag) < 0) {
-		ret = -1;
-	} else {
-		tag.has_append_time = true; /* 必需 */
-		total_priv->wait_flag = true;
-		total_priv->send_type = SEND_TYPE_NAND;
-		ret = _finally_tag_send(C, S, A, &tag);
-	}
-	return ret;
-}
-#endif
+
 int cmp_tag_list(tag_t *p){
 		/* 1.存在性检查 */
 		struct list_head *l;
@@ -457,6 +417,7 @@ int report_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 		total_priv = (total_priv_t *)&C->wifi_priv;
 	else 
 		return -1;
+
 
 	//是否是当前标签
 	if(strncmp((const char *)C->recv.frame.param_buf+2,
@@ -497,6 +458,8 @@ int report_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 			total_priv->send_type = SEND_TYPE_RAM;
 		}
 	}
+
+
 	return ret;
 }
 
@@ -509,23 +472,6 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		ret = _tag_storage_write_all(tag_report);
 	} 
 	return ret;
-
-#if 0
-	int ret;
-	total_priv_t *total_priv;
-
-	total_priv = (total_priv_t *)&C->gprs_priv;
-
-	/* 1.处理链表tag */
-	if (!list_empty(&tag_report_list)) {
-		ret = tag_send_ram(total_priv,A);
-	} else {
-		/* 2.处理文件tag */
-		ret = tag_send_flash(total_priv,C,S,A);
-	}
-
-	return ret;
-#endif
 }
 
 
@@ -536,27 +482,9 @@ int wifi_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 
 	/* 1.处理链表tag */
 	if (!list_empty(&tag_report_list)) {
-		log_msg("---- writting tag in flash ----");
 		ret = _tag_storage_write_all(tag_report);
 	} 
 	return ret;
-
-#if 0
-	int ret;
-	total_priv_t *total_priv;
-
-	total_priv = (total_priv_t *)&C->wifi_priv;
-
-	/* 1.处理链表tag */
-	if (!list_empty(&tag_report_list)) {
-		ret = tag_send_ram(total_priv,A);
-	} else {
-		/* 2.处理文件tag */
-		ret = tag_send_flash(total_priv,C,S,A);
-	}
-
-	return ret;
-#endif
 }
 
 
@@ -627,6 +555,7 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if(S->pre_cfg.work_mode == WORK_MODE_COMMAND)
 		goto out;
 
+
 	if(S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE){
 		switch(S->pre_cfg.upload_mode){
 		case UPLOAD_MODE_GPRS:
@@ -658,31 +587,7 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			break;
 		}
 	}
-	
-	/*
-	if ((S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE) && 
-		((C->conn_type == R2H_GPRS && S->work_status != WS_STOP)
-		||(C->conn_type == R2H_NONE 
-		&& S->pre_cfg.work_mode == WORK_MODE_TRIGGER
-		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS)
-		|| (C->conn_type == R2H_NONE 
-		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
-		&& S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS))) {
-		gprs_tag_send_header(C, S, A);
-	}
 
-
-	if ((S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE) && 
-		((C->conn_type == R2H_WIFI && S->work_status != WS_STOP)
-		||(C->conn_type == R2H_NONE 
-		&& S->pre_cfg.work_mode == WORK_MODE_TRIGGER
-		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI)
-		|| (C->conn_type == R2H_NONE 
-		&& S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
-		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI))) {
-		wifi_tag_send_header(C, S, A);
-	}	
-	*/
 	
 out:
 	while (!list_empty(&tag_report_list)) {
@@ -704,10 +609,10 @@ out:
 			tag_report_list_del(tag_report);
 			break;	/* 韦根一次只发一个tag */
 		}
+
 		/* 3.删除链表头tag */
 		tag_report_list_del(tag_report);
 	}
-
 	return 0;
 }
 
@@ -816,7 +721,7 @@ int heartbeat_timer_trigger(r2h_connect_t *C, system_param_t *S )
 		log_ret("S->heartbeat_timer_trigger read()");
 		return -1;
 	}
-		
+	
 	temp_conn_type = C->conn_type;
 	switch(S->pre_cfg.upload_mode) {
 	case UPLOAD_MODE_WIFI:
@@ -973,11 +878,25 @@ void send_triggerstatus(r2h_connect_t *C,system_param_t *S,const void *buf, size
 
 int report_triggerstatus(r2h_connect_t *C, system_param_t *S )
 {
+	tag_t tmp;
+	tag_t *p = &tmp;
+	memset(&tmp, 0, sizeof(tag_t));
+	if (time(&p->first_time) < 0) {
+		log_msg("report_triggerstatus time() error!");
+		return -1;
+	}
+	
 	C->status[0] = S->gpio_dece.gpio1_val;
-	C->status[1] = S->gpio_dece.gpio2_val;
-	_append_trigger_time(C->status);
+	C->status[1] = S->gpio_dece.gpio2_val;	
+
+	p->has_append_time = false;
+	_append_tag_time(p);
+	memcpy(&C->status[2], &p->data[0], 7);//添加时间戳
+
 	C->status[9] = S->action_status.report_status;//触发顺序
+
 	send_triggerstatus(C,S,C->status,sizeof(C->status));
+
 	return 0;
 }
 
