@@ -1138,7 +1138,8 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			action_report(S);
 			if(S->extended_table[0] == 0){
 				delay_timer_set(S,0);
-				stop_read_tag(S, A);
+				//stop_read_tag(S, A);
+				r2000_control_command(A, R2000_CANCEL);
 				S->work_status = WS_STOP;
 			}else{
 				log_msg("Start delay timer %d ms\n",S->extended_table[0] * 100);

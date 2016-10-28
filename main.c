@@ -102,10 +102,6 @@ static int timer_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 	}
 	
 	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER || S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC){
-		if (FD_ISSET(S->delay_timer, readset)) {
-			delay_timer_trigger(C,S,A);
-		}		
-		
 		if (FD_ISSET(S->heartbeat_timer, readset)) {
 			heartbeat_timer_trigger(C, S );
 		}

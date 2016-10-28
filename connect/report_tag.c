@@ -4,6 +4,7 @@
 #include "errcode.h"
 #include "utility.h"
 #include "command_manager.h"
+#include "rf_ctrl.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -299,7 +300,10 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 			memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 			ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);	
 		} else if (C->set_delay_timer_flag == 0){
-				ret = stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
+			ret = 0;
+			r2000_control_command(A, R2000_CANCEL);
+			S->work_status = WS_STOP;
+			//ret = stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
 		}
 	}
 
@@ -941,8 +945,10 @@ int delay_timer_trigger(r2h_connect_t *C, system_param_t *S,ap_connect_t *A )
 		return -1;
 	}
 	C->set_delay_timer_flag = 0;
-	stop_read_tag(S, A);
+	//stop_read_tag(S, A);
+	r2000_control_command(A, R2000_CANCEL);
 	S->work_status = WS_STOP;
+
 	delay_timer_set(S,0);
 	return 0;
 }
