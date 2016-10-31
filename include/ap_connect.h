@@ -57,6 +57,7 @@ typedef struct {
 	uint16_t speed;			/* 标签读取速率(张/秒) */
 	uint32_t tag_cnt;		/* 标签数量(不计重复标签) */
 	int filter_timer;		/* 过滤描述符 */
+	int filter_count;
 	struct itimerspec filter_its;	/* 过滤定时器 */
 	struct timeval start_time;	/* 开始读卡时间 */	
 } tag_report_t;

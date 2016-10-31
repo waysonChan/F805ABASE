@@ -13,6 +13,7 @@
 
 struct list_head {
 	struct list_head *next, *prev;
+	int time_cnt;
 };
 
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
