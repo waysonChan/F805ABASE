@@ -336,7 +336,7 @@ static command_t cmd_18k6c_read_epc_tid = {
 /*---------------------------------------------------------------------
  *	指令:读用户数据区
  *--------------------------------------------------------------------*/
-#define MAX_READ_USER_BANK_LEN	126
+#define MAX_READ_USER_BANK_LEN	64
 static void ec_18k6c_read_userbank(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	uint8_t err = CMD_EXE_SUCCESS;
@@ -459,7 +459,7 @@ static command_t cmd_18k6c_write_epc = {
 /*---------------------------------------------------------------------
  *	指令:写用户数据区
  *--------------------------------------------------------------------*/
-#define	MAX_WRITE_USER_BANK_LEN		32
+#define	MAX_WRITE_USER_BANK_LEN		64
 static void ec_18k6c_write_userbank(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	uint8_t err = CMD_EXE_SUCCESS;
@@ -665,15 +665,25 @@ static void ec_18k6c_lock_operate(r2h_connect_t *C, system_param_t *S, ap_connec
 		err = ERRCODE_EPC_UNKNOWERR;
 		goto out;
 	}
-	r2000_set_ant_rfpower(S, A);
-
+	
 	tag_param_t *T = &S->tag_param;
+	memcpy(T->access_pwd, cmd_param+1, 4);
+
+	if((  T->access_pwd[0]
+		| T->access_pwd[1]
+		| T->access_pwd[2]
+		| T->access_pwd[3]) == 0 ) {
+		err = ERRCODE_OPT_PASSWORD;
+		goto out;
+	}
+	
+	r2000_set_ant_rfpower(S, A);
+	
 	T->lock_type = *(cmd_param+5);
 	T->lock_bank = *(cmd_param+6);
 	T->access_bank = RFID_18K6C_MEMORY_BANK_RESERVED;
 	T->access_offset = ACCESS_PIN_ADDR;
 	T->access_wordnum = ACCESS_PIN_LEN;
-	memcpy(T->access_pwd, cmd_param+1, 4);
 	memcpy(T->access_databuf, T->access_pwd, 4);
 
 	if (r2000_tag_lock(C, T, A) < 0) {

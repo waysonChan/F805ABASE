@@ -37,7 +37,7 @@ static void _set_ant_power(ap_connect_t *A)
 	write_mac_register(A, HST_ANT_DESC_PORTDEF, 0x0);
 	write_mac_register(A, HST_ANT_DESC_DWELL, 2000);
 	write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
-	log_msg("rfpower = %d", A->cur_ant_power+20);
+	log_msg("set rfpower = %d", A->cur_ant_power+20);
 }
 
 #ifdef R2000_SOFT_RESET
@@ -287,7 +287,6 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		rs232_read(A->fd, (uint8_t *)&cmd_end+sizeof(*pcmn), pkt_len);
 		log_msg("COMMAND END");
 		r2000_error_check(C, S, A);
-
 		switch (S->work_status) {
 		case WS_READ_EPC_FIXED:
 			r2000_set_ant_rfpower(S, A);
@@ -312,6 +311,7 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			if (C->conn_type != R2H_NONE) {
 				work_status_timer_set(S, 0);
 				S->work_status = WS_STOP;
+				set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
 				tag_user_send(C, S, A);
 			} else {
 				tag_user_send(C, S, A);
@@ -321,6 +321,7 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		case WS_WRITE_USER:
 			work_status_timer_set(S, 0);
 			S->work_status = WS_STOP;
+			set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
 			if (wlk_done) {
 				wlk_done = 0;
 				command_answer(C, C->recv.frame.cmd_id, CMD_EXE_SUCCESS, NULL, 0);
