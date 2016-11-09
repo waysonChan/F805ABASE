@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 		log_quit("signal error");
 
 	work_mode_pre_config(C,S,A);
-
+	
 	while (1) {
 		int maxfd = 0;
 		fd_set readset, writeset;

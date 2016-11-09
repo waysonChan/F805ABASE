@@ -61,7 +61,7 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 	}
 	
 	if (A->tag_report.filter_time) {
-		report_tag_set_timer(A, 100);//100ms
+		report_tag_set_timer(A, 10);//10ms
 	}
 
 	/* 标签选择参数 */

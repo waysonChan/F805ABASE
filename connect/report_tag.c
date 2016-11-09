@@ -55,7 +55,7 @@ int tag_report_list_add(ap_connect_t *A, tag_t *p)
 	new_tag->ant_index = p->ant_index;
 	memcpy(new_tag->data, p->data, p->tag_len);
 
-	new_tag->list.time_cnt = A->tag_report.filter_time * 100;
+	new_tag->list.time_cnt = A->tag_report.filter_time * 10;//100ms
 
 	/* 3.3防止多次追加时间 */
 	new_tag->has_append_time = false;
@@ -662,7 +662,7 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if(A->tag_report.filter_enable == false)
 		return 0;
 	
-	if(++A->tag_report.filter_count >= A->tag_report.filter_time * 100){//10s过滤
+	if(++A->tag_report.filter_count >= A->tag_report.filter_time * 10){//100ms过滤
 		A->tag_report.filter_count = 0;
 		flash_send_tag(C,S,A);
 		send_wiegand(C,S,A);// 韦根一次只发一个tag 

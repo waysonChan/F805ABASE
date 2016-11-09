@@ -185,8 +185,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			}
 			break;
 		case 240:	/* antenna index */
-			 if (im_val == ANT_IDX_POLL) {
-					 S->pre_cfg.ant_idx = im_val;
+			if (im_val == ANT_IDX_POLL) {
+					 S->pre_cfg.ant_idx = im_val;//轮询设置后会立即生效
 					 tmp_val.ant_idx = im_val;
 					 cfg_set_pre_cfg(&tmp_val);
 			 } else if(im_val == ANT_IDX_1
@@ -194,7 +194,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 					 || im_val == ANT_IDX_3
 					 || im_val == ANT_IDX_4){
 						 if(S->ant_array[im_val-1].enable){
-							 S->pre_cfg.ant_idx = im_val;
+							 S->pre_cfg.ant_idx = im_val;//天线号设置后会立即生效
 							 tmp_val.ant_idx = im_val;
 							 cfg_set_pre_cfg(&tmp_val);
 						 } else {
@@ -216,6 +216,13 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				|| im_val == UPLOAD_MODE_UDP) {
 				tmp_val.upload_mode = im_val;
 				cfg_set_pre_cfg(&tmp_val);
+				if(im_val == UPLOAD_MODE_GPRS){
+					tmp_val.dev_type = 0x20;
+					cfg_set_pre_cfg(&tmp_val);//修改设备类型支持GPRS
+				}else if(im_val == UPLOAD_MODE_WIFI){
+					tmp_val.dev_type = 0x10;
+					cfg_set_pre_cfg(&tmp_val);//同上
+				}
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
@@ -224,7 +231,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		case 249:	/* flash enable */
 			if (im_val == NAND_FLASH_ENBABLE
 				|| im_val == NAND_FLASH_DISABLE) {
-				S->pre_cfg.flash_enable = im_val;
+				S->pre_cfg.flash_enable = im_val;//flash使能会立即生效
 				tmp_val.flash_enable = im_val;
 				cfg_set_pre_cfg(&tmp_val);
 			} else {
@@ -388,7 +395,6 @@ static void ec_ante_param_config(r2h_connect_t *C, system_param_t *S, ap_connect
 		S->ant_array[i].switch_time = cmd_param[i+8];
 		cfg_set_ant(&S->ant_array[i], i+1);
 	}
-
 
 	command_answer(C, COMMAND_PARAMETER_MAN_RF_CFG, CMD_EXE_SUCCESS, NULL, 0);
 }
@@ -709,7 +715,7 @@ static void ec_tag_param_config(r2h_connect_t *C, system_param_t *S, ap_connect_
 		break;
 	case TAG_FILTER_TIME:
 		A->tag_report.filter_time = *(cmd_param+1);
-		report_tag_set_timer(A, A->tag_report.filter_time * 100);
+		//report_tag_set_timer(A, A->tag_report.filter_time );
 		cfg_set_filter_time(A->tag_report.filter_time);
 		break;
 	case TAG_Q_VALUE:

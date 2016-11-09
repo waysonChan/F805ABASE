@@ -1092,9 +1092,11 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return -1;
 	}
 	
-	C->triger_confirm_flag = true;
-	C->status_cnt = 6;
-	delay_timer_set(S,0);
+	if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI || S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS){
+		C->triger_confirm_flag = true;
+		C->status_cnt = 6;
+	}
+	
 	if((key_vals[0]==1) || (key_vals[1]==1)){//触发设备	
 		action_identify(S,key_vals[0],key_vals[1]);
 		if(S->work_status == WS_STOP)
@@ -1130,22 +1132,30 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				log_msg("invalid operate mode");
 				return -1;
 			}
-			if(r2000_error_check(C, S, A)<0)
+			
+			if(r2000_error_check(C, S, A)<0){
 				log_msg("start error");
+				return -1;
+			}
+			if(C->set_delay_timer_flag == true)
+				delay_timer_set(S,0);
+			auto_read_tag(C, S, A);
 		}
-		auto_read_tag(C, S, A);
-	}else{//未触发设备
+		
+	} else {//未触发设备
 		if(S->work_status != WS_STOP){
 			action_report(S);
 			if(S->extended_table[0] == 0){
-				delay_timer_set(S,0);
+				//delay_timer_set(S,0);//no need
 				//stop_read_tag(S, A);
 				r2000_control_command(A, R2000_CANCEL);
 				S->work_status = WS_STOP;
 			}else{
-				log_msg("Start delay timer %d ms\n",S->extended_table[0] * 100);
-				delay_timer_set(S,S->extended_table[0]);
-				C->set_delay_timer_flag = 1;
+				if(C->set_delay_timer_flag == false){
+					log_msg("Start delay timer %d ms",S->extended_table[0] * 100);					
+					delay_timer_set(S,S->extended_table[0]);
+				}
+				C->set_delay_timer_flag = true;
 			}
 		}
 	}

@@ -95,7 +95,8 @@ static void ec_r2000_fw_update(r2h_connect_t *C, system_param_t *S, ap_connect_t
 
 	/* 文件类型 */
 	uint8_t file_type = cmd_param[0];
-	if (file_type != FILE_TYPE_R2000 && file_type != FILE_TYPE_LINUX_FILE) {
+	if (file_type != FILE_TYPE_R2000 && file_type != FILE_TYPE_LINUX_FIRMWARE
+		&& file_type != FILE_TYPE_LINUX_FILE) {
 		log_msg("%s: invalid file type", __FUNCTION__);
 		err = ERRCODE_CMD_PARAM;
 		goto out;
@@ -188,6 +189,7 @@ static void ec_r2000_fw_update(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		}
 		break;
 	case FILE_TYPE_LINUX_FILE:
+	case FILE_TYPE_LINUX_FIRMWARE:
 		if (upgrade_linux_file(tmp_name) < 0) {
 			err = ERRCODE_OPT_UNFINISHICMD;
 			goto out2;

@@ -736,10 +736,19 @@ static void ec_18k6c_tag_kill(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		err = ERRCODE_EPC_UNKNOWERR;
 		goto out;
 	}
-	r2000_set_ant_rfpower(S, A);
 
 	tag_param_t *T = &S->tag_param;
 	memcpy(T->kill_pwd, cmd_param+1, 4);
+	
+	if((  T->access_pwd[0]
+		| T->access_pwd[1]
+		| T->access_pwd[2]
+		| T->access_pwd[3]) == 0 ) {
+		err = ERRCODE_OPT_PASSWORD;
+		goto out;
+	}
+	
+	r2000_set_ant_rfpower(S, A);
 
 	if (r2000_tag_kill(T, A) < 0) {
 		log_msg("r2000_tag_kill error");

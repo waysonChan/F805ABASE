@@ -44,11 +44,7 @@ static ssize_t r2h_udp_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 {
 	ssize_t ret;
 	uint32_t n_written = 0;
-	
-	//char paddr[20];
-	//inet_ntop(AF_INET,(void *)&C->udp_client_addr.sin_addr,paddr,16);	
-	//printf("ad=%s,len=%d\n",paddr,nbytes);
-	
+
 	while (n_written < nbytes) {
 		ret = sendto(C->r2h[R2H_UDP].fd, buf+n_written, nbytes-n_written, 0, 
 			(struct sockaddr *)&C->udp_client_addr, sizeof(struct sockaddr_in));

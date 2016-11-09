@@ -232,6 +232,23 @@ int upgrade_linux_file(const char *file_name)
 #endif
 	/* 复制到 f806 文件夹 */
 	char cmd[MAX_UPGRADE_CMD_LEN] = {0};
+
+	/* rcS  复制到/etc/init.d/   文件夹 */
+	if(!strcmp(file_name,"rcS")){
+		system("cp /etc/init.d/rcS /etc/init.d/rcS_bk");
+		snprintf(cmd, MAX_UPGRADE_CMD_LEN, "cp /f806/upgrade/%s /etc/init.d/%s", file_name, file_name);
+		if (system(cmd) < 0) {
+			log_msg("system error");
+			return -1;
+		}
+		chmod("/etc/init.d/rcS",S_IRUSR|S_IWUSR|S_IXUSR | S_IRGRP|S_IXGRP | S_IXOTH);
+		return 0;
+	}
+
+	/* 复制到 f866 文件夹 */
+	if(!strcmp(file_name,"f806.cfg")){
+		system("cp /f806/f806.cfg /f806/f806.cfg.bk");
+	}
 	snprintf(cmd, MAX_UPGRADE_CMD_LEN, "cp /f806/upgrade/%s /f806/%s", file_name, file_name);
 	if (system(cmd) < 0) {
 		log_msg("system error");
