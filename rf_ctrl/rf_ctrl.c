@@ -36,8 +36,13 @@ static void _set_ant_power(ap_connect_t *A)
 	write_mac_register(A, HST_ANT_DESC_CFG, 0x1);
 	write_mac_register(A, HST_ANT_DESC_PORTDEF, 0x0);
 	write_mac_register(A, HST_ANT_DESC_DWELL, 2000);
-	write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
-	log_msg("set rfpower = %d", A->cur_ant_power+20);
+	if(A->cur_ant_power < 0x0B){
+		write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
+		log_msg("set rfpower = %d", A->cur_ant_power+20);
+	} else {
+		write_mac_register(A, HST_ANT_DESC_RFPOWER, (A->cur_ant_power - 0x10));
+		log_msg("set rfpower = %d", A->cur_ant_power-0x10);
+	}
 }
 
 #ifdef R2000_SOFT_RESET
@@ -633,9 +638,14 @@ int r2000_set_ant_rfpower(system_param_t *S, ap_connect_t *A)
 	} else {
 		A->cur_ant_power = S->ant_array[S->cur_ant-1].rfpower;
 	}
-
-	write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
-	log_msg("rfpower = %d", A->cur_ant_power+20);
+	
+	if(A->cur_ant_power < 0x0B){
+		write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
+		log_msg("set rfpower = %d", A->cur_ant_power+20);
+	} else {
+		write_mac_register(A, HST_ANT_DESC_RFPOWER, (A->cur_ant_power - 0x10));
+		log_msg("set rfpower = %d", A->cur_ant_power-0x10);
+	}
 	return 0;
 }
 
@@ -1071,14 +1081,58 @@ void action_report(system_param_t *S)
 	S->action_status.first_in = 0;
 
 }
-
-
 #endif
+
+int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	if(S->work_status == WS_STOP)
+	{
+		switch (S->pre_cfg.oper_mode) {
+		case OPERATE_READ_EPC:
+			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+				S->work_status = WS_READ_EPC_FIXED;
+				S->cur_ant = S->pre_cfg.ant_idx;
+			} else {
+				S->work_status = WS_READ_EPC_INTURN;
+			}
+			break;
+		case OPERATE_READ_TID:
+			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+				S->work_status = WS_READ_TID_FIXED;
+				S->cur_ant = S->pre_cfg.ant_idx;
+			} else {
+				S->work_status = WS_READ_TID_INTURN;
+			}			
+			break;
+		case OPERATE_READ_USER:
+			/* 读用户区不支持轮询模式 */
+			if (S->pre_cfg.ant_idx != 0) {
+				S->cur_ant = S->pre_cfg.ant_idx;
+			} else {
+				S->cur_ant = 1;
+			}
+			S->work_status = WS_READ_USER;
+			break;
+		default:
+			S->work_status = WS_STOP;
+			log_msg("invalid operate mode");
+			return -1;
+		}
+		
+		if(r2000_error_check(C, S, A)<0){
+			log_msg("start error");
+			return -1;
+		}
+		auto_read_tag(C, S, A);
+	}
+	
+	return 0;
+}
 
 /* 触发读卡功能 */
 int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
-	unsigned char key_vals[2];
+	unsigned char key_vals[2],err = 0;
 	if(read(S->gpio_dece.fd, key_vals, sizeof(key_vals)) < 0){
 		log_ret("trigger_to_read_tag read()\n");
 		return -1;
@@ -1099,67 +1153,20 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	
 	if((key_vals[0]==1) || (key_vals[1]==1)){//触发设备	
 		action_identify(S,key_vals[0],key_vals[1]);
-		if(S->work_status == WS_STOP)
-		{
-			switch (S->pre_cfg.oper_mode) {
-			case OPERATE_READ_EPC:
-				if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
-					S->work_status = WS_READ_EPC_FIXED;
-					S->cur_ant = S->pre_cfg.ant_idx;
-				} else {
-					S->work_status = WS_READ_EPC_INTURN;
-				}
-				break;
-			case OPERATE_READ_TID:
-				if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
-					S->work_status = WS_READ_TID_FIXED;
-					S->cur_ant = S->pre_cfg.ant_idx;
-				} else {
-					S->work_status = WS_READ_TID_INTURN;
-				}			
-				break;
-			case OPERATE_READ_USER:
-				/* 读用户区不支持轮询模式 */
-				if (S->pre_cfg.ant_idx != 0) {
-					S->cur_ant = S->pre_cfg.ant_idx;
-				} else {
-					S->cur_ant = 1;
-				}
-				S->work_status = WS_READ_USER;
-				break;
-			default:
-				S->work_status = WS_STOP;
-				log_msg("invalid operate mode");
-				return -1;
-			}
-			
-			if(r2000_error_check(C, S, A)<0){
-				log_msg("start error");
-				return -1;
-			}
-			if(C->set_delay_timer_flag == true)
-				delay_timer_set(S,0);
-			auto_read_tag(C, S, A);
-		}
-		
+		C->set_start_timer_cnt = 0;			 //reset timer cnt
+		err = trigger_send_cmd(C,S,A);		
 	} else {//未触发设备
-		if(S->work_status != WS_STOP){
+		//if(S->work_status != WS_STOP){
 			action_report(S);
-			if(S->extended_table[0] == 0){
-				//delay_timer_set(S,0);//no need
-				//stop_read_tag(S, A);
-				r2000_control_command(A, R2000_CANCEL);
-				S->work_status = WS_STOP;
-			}else{
-				if(C->set_delay_timer_flag == false){
-					log_msg("Start delay timer %d ms",S->extended_table[0] * 100);					
-					delay_timer_set(S,S->extended_table[0]);
-				}
+			if(S->extended_table[0] != 0)
 				C->set_delay_timer_flag = true;
-			}
+		//}
+		if((S->extended_table[1] != 0)){
+			C->set_delay_timer_cnt = 0; 	//reset timer cnt
+			err = trigger_send_cmd(C,S,A);
 		}
 	}
-	return 0;
+	return err;
 }
 
 

@@ -23,6 +23,8 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	C->wifi_connect = false;
 	C->tcp_send_symbol = SEND_TYPE_RAM;
 	C->set_delay_timer_flag = 0;
+	C->set_start_timer_cnt = 0;
+	C->set_delay_timer_cnt = 0;
 	S->action_status.status_1 = 0;
 	S->action_status.status_2 = 0;
 	S->action_status.status_3 = 0;

@@ -17,7 +17,6 @@
 LIST_HEAD(tag_report_list);
 
 
-
 /* 链表尾添加 */
 #define MAX_TAG_NUM_IN_RAM	5000
 int tag_report_list_add(ap_connect_t *A, tag_t *p)
@@ -55,7 +54,7 @@ int tag_report_list_add(ap_connect_t *A, tag_t *p)
 	new_tag->ant_index = p->ant_index;
 	memcpy(new_tag->data, p->data, p->tag_len);
 
-	new_tag->list.time_cnt = A->tag_report.filter_time * 10;//100ms
+	new_tag->time_cnt = A->tag_report.filter_time * 10;//100ms
 
 	/* 3.3防止多次追加时间 */
 	new_tag->has_append_time = false;
@@ -91,50 +90,23 @@ void tag_report_list_del(tag_report_t *tag_report)
 	tag_report->tag_cnt--;
 }
 
-typedef struct list_head TAG_FILTER_LIST;
-
-TAG_FILTER_LIST *DelFromTagFilterList(tag_report_t *tag_report)
-{
-    struct list_head *temp=	(struct list_head *)0;
-	struct list_head *plist = tag_report_list.next;
-
-    if (plist != (struct list_head *)0)                          //检验要删除的节点的有效性
-    {
-        if (plist->prev== (struct list_head *)0)            //将该节点从链表中删除
-        {
-            plist->next->prev =   (struct list_head *)0;
-            temp             =   plist->next;
-        }
-        else
-        {
-            plist->prev->next = plist->next;
-            plist->next->prev = plist->prev;
-        }
-        temp                    =   plist->next;                //保存原先的链表中下一节点的地址
-        tag_report->tag_cnt--;                                     //已建立链表节点数减一
-        return temp;
-    }
-    return (struct list_head *)0;
-}
-
-
 void TimeTickTagFilterList(tag_report_t *tag_report)
 {
-	struct list_head *l = tag_report_list.next;
-
+	int i=0;
     if(tag_report->tag_cnt > 0)                                //链表中节点不为空
     {
-        for (l = tag_report_list.next; l != &tag_report_list; l = l->next)              //从链表起始节点开始遍历到尾部
+    	i = tag_report->tag_cnt;
+        while (!list_empty(&tag_report_list) && (i--))             //从链表起始节点开始遍历到尾部
         {
-       		tag_t *tmp = list_entry(l, tag_t, list);
-            tmp->list.time_cnt -=  1;                   //超时时间处理,各个节点的超时时间值减去定时器的步进值
-
-            if(tmp->list.time_cnt < 0)                          //超时时间到了,要删除该节点
+        	struct list_head *l = tag_report_list.next;
+        	tag_t *tmp = list_entry(l, tag_t, list);
+            tmp->time_cnt -=  1; //超时时间处理,各个节点的超时时间值减去定时器的步进值
+			
+            if(tmp->time_cnt < 0)//超时时间到了,要删除该节点
             {
-                l = DelFromTagFilterList(tag_report);
-            }
-            //else
-            //     l = l->next;                        //指针调整到下一个节点
+            	//删除链表
+            	tag_report_list_del(tag_report);
+            }            			
         }
     }
 }
@@ -349,12 +321,8 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 			C->tmp_send_len = ptag->tag_len;
 			memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 			ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);	
-		} else if (C->set_delay_timer_flag == 0){
-			ret = 0;
-			r2000_control_command(A, R2000_CANCEL);
-			S->work_status = WS_STOP;
-			//ret = stop_read_tag(S, A);//连接状态不触发,不读卡、不上传
 		}
+
 	}
 
 	return ret;
@@ -964,8 +932,8 @@ int delay_timer_set(system_param_t *S, int s)
 	log_msg("set time %d ms",s);
 
 	struct itimerspec its = {
-		.it_interval.tv_sec = 0,
-		.it_interval.tv_nsec = 0,
+		.it_interval.tv_sec = (s / 1000),
+		.it_interval.tv_nsec = (s % 1000) * 1000000,//重复计数
 		.it_value.tv_sec = (s / 1000),
 		.it_value.tv_nsec = (s % 1000) * 1000000,
 
@@ -987,7 +955,8 @@ int delay_timer_init(system_param_t *S)
 		return -1;
 	} 
 	bzero(&S->delay_timer_its, sizeof(struct itimerspec));
-	delay_timer_set(S,0);//先关闭
+	//delay_timer_set(S,0);//先关闭	
+	delay_timer_set(S,1);//100ms定时
 	return 0;
 }
 
@@ -998,12 +967,29 @@ int delay_timer_trigger(r2h_connect_t *C, system_param_t *S,ap_connect_t *A )
 		log_ret("S->delay_timer_trigger read()");
 		return -1;
 	}
-	C->set_delay_timer_flag = 0;
+	//delay_timer_set(S,0);
 	//stop_read_tag(S, A);
-	r2000_control_command(A, R2000_CANCEL);
-	S->work_status = WS_STOP;
-
-	delay_timer_set(S,0);
+	if(S->work_status == WS_STOP){
+		return 0;
+	}
+	
+	if(C->set_delay_timer_flag == 0){
+		if(S->extended_table[1] > 0 && C->set_start_timer_cnt++ > (S->extended_table[1]*5)){
+			log_msg("stop trigger");
+			r2000_control_command(A, R2000_CANCEL);
+			S->work_status = WS_STOP;	
+			C->set_start_timer_cnt = 0;
+			C->set_delay_timer_cnt = 0;
+		}//else continue read tags
+	} else if(C->set_delay_timer_cnt++ > (S->extended_table[0]*5)){
+		log_msg("stop trigger 2222");
+		r2000_control_command(A, R2000_CANCEL);
+		S->work_status = WS_STOP;	
+		C->set_start_timer_cnt = 0;
+		C->set_delay_timer_cnt = 0;
+		C->set_delay_timer_flag = 0;
+	}
+	
 	return 0;
 }
 

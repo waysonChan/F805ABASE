@@ -35,7 +35,8 @@ struct _tag_t{
 	time_t first_time;		/* 第1次读卡时间 */
 	time_t last_time;		/* 最后1次读卡时间 */
 	uint16_t cnt;			/* 读到的次数 */
-	uint16_t tag_len;		/* 标签长度 */
+	uint16_t tag_len;		/* 标签长度 */	
+	int time_cnt;
 	uint8_t data[MAX_TAG_EPC_LEN];	/* EPC码 */
 };
 
