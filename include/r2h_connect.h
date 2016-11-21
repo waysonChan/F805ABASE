@@ -87,6 +87,16 @@ typedef struct {
 	int send_type;	
 } total_priv_t;
 
+typedef struct {
+	int trigger_bind_style[4];
+	int use_time[4];	
+	int total_timer_cnt;	
+	int total_timer;
+	int current_antenna_cnt;	
+	int current_able_ant;
+} antenna_trigger_t;
+
+
 #define UPLOAD_MODE_NONE	0x00
 #define UPLOAD_MODE_RS232	0x01
 #define UPLOAD_MODE_RS485	0x02
@@ -128,6 +138,7 @@ struct r2h_connect {
 	bool status_send_from_file;
 	bool triger_confirm_flag;
 	char status_buf[10];
+	antenna_trigger_t ant_trigger;
 	gprs_priv_t gprs_priv;
 	wifi_priv_t wifi_priv;
 	total_priv_t total_priv;

@@ -34,8 +34,6 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	S->action_status.first_in = 0;
 	S->action_status.report_status = 0xff;
 
-
-
 	return C;
 }
 

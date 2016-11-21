@@ -312,7 +312,7 @@ system_param_t *sys_param_new(void)
 		system("rm -f /f806/gprs-enable");
 	}
 
-	char *sw_ver = "1.4.17";
+	char *sw_ver = "1.4.18";
 	strncpy(S->sysinfo.mcu_swrev, sw_ver, strlen(sw_ver));
 	log_msg("##########APP Current Version:%s##################",S->sysinfo.mcu_swrev);
 
@@ -350,7 +350,7 @@ system_param_t *sys_param_new(void)
 	cfg_get_extended_table(get_extended_table,10);
 	memcpy(S->extended_table,get_extended_table,10);
 
-	/* 工作状态 */
+	/* 工作状态 */	
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC) {
 		switch (S->pre_cfg.oper_mode) {
 		case OPERATE_READ_EPC:

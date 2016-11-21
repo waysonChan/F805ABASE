@@ -23,6 +23,7 @@ int read_mac_register(ap_connect_t *A, uint16_t reg_addr, uint32_t *reg_data);
 int write_mac_register(ap_connect_t *A, uint16_t reg_addr, uint32_t reg_data);
 int r2000_error_check(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
 int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
+int trigger_pre_cfg(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
 int auto_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
 int r2000_set_freq(system_param_t *S, ap_connect_t *A);
 int r2000_set_operate_mode(ap_connect_t *A, int mode);

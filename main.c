@@ -186,25 +186,13 @@ static int tag_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, f
 }
 
 static int work_mode_pre_config (r2h_connect_t *C, system_param_t *S, ap_connect_t *A) {
-	struct sockaddr_in *paddr;
-
-	paddr = &C->udp_client_addr;
 	switch(S->pre_cfg.work_mode){
 	case WORK_MODE_COMMAND:
 		break;
 	case WORK_MODE_AUTOMATIC:
 		auto_read_tag(C, S, A);
 	case WORK_MODE_TRIGGER:		
-		if(S->pre_cfg.upload_mode == UPLOAD_MODE_UDP) {
-			memset(&C->udp_client_addr, 0, sizeof(C->udp_client_addr));	
-			C->udp_client_addr.sin_family = AF_INET;
-			C->udp_client_addr.sin_port = htons(S->data_center.tcp_port);
-			int err = inet_pton(AF_INET, S->data_center.ip, &paddr->sin_addr);
-			if (err <= 0) {
-				log_msg("inet_pton error");
-				return -1;
-			}
-		}
+		trigger_pre_cfg(C,S,A);
 		break;
 	default:
 		break;

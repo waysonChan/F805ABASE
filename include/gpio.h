@@ -3,6 +3,8 @@
 
 #include "config.h"
 #include "parameter.h"
+#include "ap_connect.h"
+#include "r2h_connect.h"
 
 #define MAX_GPIO_NUM		20
 #define MAX_GPIO_NAME_LENGTH	79
@@ -65,6 +67,7 @@ char get_gpio_status(gpio_index_e gpio_index);
 int set_gpio_status(gpio_index_e gpio_index, char val);
 int get_active_antenna(void);
 int set_active_antenna(system_param_t *S, int ant_index);
+int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
 int set_next_active_antenna(system_param_t *S);
 int set_antenna_led_status(int ant_index, led_color_e color, int dev_type);
 int beep(beep_action_e action);

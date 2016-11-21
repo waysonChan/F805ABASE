@@ -967,27 +967,15 @@ int delay_timer_trigger(r2h_connect_t *C, system_param_t *S,ap_connect_t *A )
 		log_ret("S->delay_timer_trigger read()");
 		return -1;
 	}
-	//delay_timer_set(S,0);
-	//stop_read_tag(S, A);
+	
 	if(S->work_status == WS_STOP){
 		return 0;
 	}
 	
-	if(C->set_delay_timer_flag == 0){
-		if(S->extended_table[1] > 0 && C->set_start_timer_cnt++ > (S->extended_table[1]*5)){
-			log_msg("stop trigger");
-			r2000_control_command(A, R2000_CANCEL);
-			S->work_status = WS_STOP;	
-			C->set_start_timer_cnt = 0;
-			C->set_delay_timer_cnt = 0;
-		}//else continue read tags
-	} else if(C->set_delay_timer_cnt++ > (S->extended_table[0]*5)){
-		log_msg("stop trigger 2222");
-		r2000_control_command(A, R2000_CANCEL);
-		S->work_status = WS_STOP;	
-		C->set_start_timer_cnt = 0;
+	if(C->set_delay_timer_flag == 1){
+		C->set_delay_timer_cnt++;
+	} else {
 		C->set_delay_timer_cnt = 0;
-		C->set_delay_timer_flag = 0;
 	}
 	
 	return 0;

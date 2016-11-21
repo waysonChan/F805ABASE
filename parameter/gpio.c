@@ -196,6 +196,149 @@ static inline int get_next_enabled_ant(system_param_t *S, int cur_ant_index)
 	return next_ante_index;
 }
 
+int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t *A) {
+	int err = 0;
+	int next_ant_index,next_ant,i;
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	
+	int ms = msec_between(S->last_ant_change_time, now);
+
+	if (ms < 100) {
+		err = -1;
+		goto out;
+	} else {		
+		S->last_ant_change_time = now;
+		C->ant_trigger.total_timer_cnt++;
+		C->ant_trigger.current_antenna_cnt++;
+	}
+	
+	//stop this event
+	if(C->ant_trigger.total_timer_cnt >= C->ant_trigger.total_timer
+		|| C->set_delay_timer_cnt > S->extended_table[0]){
+		for(i = 3; i >= 0; i--){
+			if(S->ant_array[i].enable){
+				if(C->ant_trigger.use_time[i] == 0)//continue mode 
+					C->ant_trigger.current_able_ant |= 1<<i;
+				else
+					C->ant_trigger.current_able_ant &=  ~(1<<i);
+			}
+		}
+		C->ant_trigger.total_timer_cnt = 0;
+		//we must see which ant shuld be stop
+		if(C->set_delay_timer_cnt > S->extended_table[0]){
+			C->ant_trigger.current_able_ant = 0;
+			int i;
+			for(i = 3; i >= 0; i--){
+				if(S->ant_array[i].enable){
+					switch(C->ant_trigger.trigger_bind_style[i]){
+					case 0:
+						break;//continue mode stop
+					case 1:
+						if( S->gpio_dece.gpio1_val ){
+							C->ant_trigger.current_able_ant |= 1<<i;
+							S->cur_ant = i+1;
+						}
+						break;
+					case 2:
+						if( S->gpio_dece.gpio2_val ){
+							C->ant_trigger.current_able_ant |= 1<<i;
+							S->cur_ant = i+1;
+						}
+						break;
+					case 3:
+						if( S->gpio_dece.gpio1_val || S->gpio_dece.gpio1_val ){
+							C->ant_trigger.current_able_ant |= 1<<i;
+							S->cur_ant = i+1;
+						}
+						break;//any trigger
+					default:
+						break;
+					}
+				}
+			}
+			C->set_delay_timer_flag = 0;
+			if(C->ant_trigger.current_able_ant == 0){
+				err = -1;
+				goto out;
+			}
+		}
+	}
+	
+	int cur_ant = get_active_antenna() - 1;	
+	if(C->ant_trigger.use_time[cur_ant] == 0){
+		if( C->ant_trigger.current_antenna_cnt < S->ant_array[cur_ant].switch_time ){
+			err = -1;
+			goto out;
+		} else {
+			C->ant_trigger.current_antenna_cnt = 0;
+		}
+	} else {
+		if( C->ant_trigger.current_antenna_cnt < S->ant_array[cur_ant].switch_time ){
+			err = -1;
+			goto out;
+		} else {
+			C->ant_trigger.current_able_ant &=  ~(1<<cur_ant);
+			C->ant_trigger.current_antenna_cnt = 0;			
+		}
+	}
+	
+	//find next active ant
+	next_ant = 1 << cur_ant;
+	i = 3;
+	do{
+		if(next_ant == 0x08){
+			next_ant = 1;
+		} else {
+			next_ant <<= 1;
+		}
+	}while(!(C->ant_trigger.current_able_ant & next_ant) && i--);
+
+	switch(next_ant){
+	case 1:
+		next_ant_index = 1;
+		break;
+	case 2:
+		next_ant_index = 2;
+		break;
+	case 4:
+		next_ant_index = 3;
+		break;
+	case 8:
+		next_ant_index = 4;
+		break;
+	default:
+		next_ant_index = 0;//wrong ant
+		break;
+	}
+	
+	if(next_ant_index == 0){
+		log_msg("no active ant\n");
+		err = -1;
+		goto out;			
+	}
+	/* 如果下一个天线等于当前天线则什么也不做 */
+	if (next_ant_index == S->cur_ant) {
+		set_antenna_led_status(S->cur_ant, LED_COLOR_RED, S->pre_cfg.dev_type);
+		err = 0;
+		goto out;
+	}
+
+	
+out:	
+	//switch ant
+	if(err == 0){
+		if(S->ant_array[S->cur_ant-1].enable)
+			set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
+		else
+			set_antenna_led_status(S->cur_ant, LED_COLOR_NONE, S->pre_cfg.dev_type);
+		
+		set_active_antenna(S, next_ant_index);	
+	}
+	return err;
+}
+
+
 int set_next_active_antenna(system_param_t *S)
 {
 	struct timeval now;
@@ -222,6 +365,7 @@ int set_next_active_antenna(system_param_t *S)
 		set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
 	else
 		set_antenna_led_status(S->cur_ant, LED_COLOR_NONE, S->pre_cfg.dev_type);
+	
 	set_active_antenna(S, next_ant_index);
 	return 0;
 }
