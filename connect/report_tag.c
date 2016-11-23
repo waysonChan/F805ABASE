@@ -97,9 +97,9 @@ void TimeTickTagFilterList(tag_report_t *tag_report)
     if(tag_report->tag_cnt > 0)                                //链表中节点不为空
     {
     	i = tag_report->tag_cnt;
+		struct list_head *l = tag_report_list.next;
         while (!list_empty(&tag_report_list) && (i--))             //从链表起始节点开始遍历到尾部
         {
-        	struct list_head *l = tag_report_list.next;
         	tag_t *tmp = list_entry(l, tag_t, list);
             tmp->time_cnt -=  1; //超时时间处理,各个节点的超时时间值减去定时器的步进值
 			
@@ -107,7 +107,10 @@ void TimeTickTagFilterList(tag_report_t *tag_report)
             {
             	//删除链表
             	tag_report_list_del(tag_report);
-            }            			
+				l = tag_report_list.next;
+            } else {
+				l = l->next;
+			}
         }
     }
 }
