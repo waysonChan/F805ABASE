@@ -124,7 +124,7 @@ uint16_t tag_storage_get_cnt(void)
 int tag_storage_init(void)
 {
 	size_t sz;
-	fp = fopen("tagdata.bin", "r+");
+	fp = fopen("/f806/tagdata.bin", "r+");
 	if (fp) {
 		sz = fread(&tag_storage_total, sizeof(tag_storage_total), 1, fp);
 		if (sz != 1) {
@@ -135,7 +135,7 @@ int tag_storage_init(void)
 		}
 	} else {
 		log_msg("tagdata.bin not exist, going to create it.");
-		fp = fopen("tagdata.bin", "w");	/* 创建文件 */
+		fp = fopen("/f806/tagdata.bin", "w");	/* 创建文件 */
 		if (fp == NULL) {
 			log_sys("fopen error w");
 			return -1;
@@ -148,7 +148,7 @@ int tag_storage_init(void)
 		}
 
 		fclose(fp);
-		fp = fopen("tagdata.bin", "r+");
+		fp = fopen("/f806/tagdata.bin", "r+");
 		if (fp == NULL) {
 			log_sys("fopen error r+");
 			return -1;

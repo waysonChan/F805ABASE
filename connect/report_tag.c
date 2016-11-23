@@ -174,10 +174,20 @@ int work_command_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		log_msg("_finally_tag_send: invalid cmd_id");
 		return -1;
 	}
+	
+	
 	/* 已建立连接 */
 	if (C->conn_type != R2H_NONE) {
-		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
-			_append_tag_time(ptag);
+		switch (S->pre_cfg.upload_mode) {
+		case UPLOAD_MODE_RS232:
+			C->conn_type = R2H_RS232;
+			break;
+		case UPLOAD_MODE_UDP:
+			C->conn_type = R2H_UDP;
+			break;
+		case UPLOAD_MODE_TCP:
+			C->conn_type = R2H_TCP;
+			break;
 		}
 		C->tmp_send_len = ptag->tag_len;
 		memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
@@ -967,7 +977,6 @@ int delay_timer_trigger(r2h_connect_t *C, system_param_t *S,ap_connect_t *A )
 		log_ret("S->delay_timer_trigger read()");
 		return -1;
 	}
-	
 	if(S->work_status == WS_STOP){
 		return 0;
 	}

@@ -83,6 +83,53 @@ int set_gprs_apn(const char *new_apn)
 	return 0;
 }
 
+
+int set_chap_secrets(const char *username, const char *passwd){
+	FILE *wfp = fopen("/f806/tmp", "w+");
+	char rep_line[256] = {0};
+	snprintf(rep_line, sizeof(rep_line), "%s       *      %s       *",username, passwd);
+	fputs(rep_line, wfp);
+	fclose(wfp);
+	rename("/f806/tmp", "/etc/ppp/chap-secrets");
+	log_msg("set_chap_secrets ok");
+	return 0;
+}
+
+
+int set_gprs_wave(const char *username)
+{
+	char line[1024] = {0};
+
+	FILE *rfp = fopen("/etc/ppp/peers/gprs-wave", "r");
+	if (rfp == NULL) {
+		log_msg("fopen error");
+		return -1;
+	}
+
+	FILE *wfp = fopen("/f806/tmp", "w+");
+	if (rfp == NULL) {
+		log_msg("fopen error");
+		return -1;
+	}
+
+	while (fgets(line, sizeof(line), rfp) != NULL) {
+		char *ret = strstr(line, "user");
+		if (ret) {
+			char rep_line[256] = {0};
+			snprintf(rep_line, sizeof(rep_line), "user %s\n", username);
+			fputs(rep_line, wfp);
+		} else {
+			fputs(line, wfp);
+		}
+	}
+
+	fclose(rfp);
+	fclose(wfp);
+	rename("/f806/tmp", "/etc/ppp/peers/gprs-wave");
+	return 0;
+}
+
+
 /*---------------------------------------------------------------------
  * CRC: CRC-16
  *--------------------------------------------------------------------*/

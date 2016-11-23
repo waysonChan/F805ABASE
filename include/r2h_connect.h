@@ -92,7 +92,7 @@ typedef struct {
 	int use_time[4];	
 	int total_timer_cnt;	
 	int total_timer;
-	int current_antenna_cnt;	
+	int antenna_cnt[4];	
 	int current_able_ant;
 } antenna_trigger_t;
 

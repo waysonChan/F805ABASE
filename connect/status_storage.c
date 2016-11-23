@@ -100,7 +100,7 @@ uint16_t triger_status_get_cnt(void)
 int triger_status_init(void)
 {
 	size_t sz;
-	triger_fp = fopen("triger_status.bin", "r+");
+	triger_fp = fopen("/f806/triger_status.bin", "r+");
 	if (triger_fp) {
 		sz = fread(&triger_status_total, sizeof(triger_status_total), 1, triger_fp);
 		if (sz != 1) {
@@ -111,7 +111,7 @@ int triger_status_init(void)
 		}
 	} else {
 		log_msg("triger_status.bin not exist, going to create it.");
-		triger_fp = fopen("triger_status.bin", "w");	/* 创建文件 */
+		triger_fp = fopen("/f806/triger_status.bin", "w");	/* 创建文件 */
 		if (triger_fp == NULL) {
 			log_sys("fopen error w");
 			return -1;
@@ -124,7 +124,7 @@ int triger_status_init(void)
 		}
 
 		fclose(triger_fp);
-		triger_fp = fopen("triger_status.bin", "r+");
+		triger_fp = fopen("/f806/triger_status.bin", "r+");
 		if (triger_fp == NULL) {
 			log_sys("fopen error r+");
 			return -1;

@@ -89,7 +89,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
 			}
-			
+			memset(S->data_center.apn, 0 , sizeof(S->data_center.apn));
 			memcpy(S->data_center.apn, cmd_param+3, len);
 			cfg_set_data_center(&S->data_center);
 			set_gprs_apn(S->data_center.apn);
@@ -99,16 +99,17 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
 			}
-			
+			memset(S->data_center.username, 0 , sizeof(S->data_center.username));
 			memcpy(S->data_center.username, cmd_param+3, len);
 			cfg_set_data_center(&S->data_center);
 			break;
 		case 124:	/* dsc passwd */
+			len  = C->recv.frame.param_len - 4;//减去命令字等长度
 			if (len > DSC_PASSWD_LEN) {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
 			}
-			
+			memset(S->data_center.passwd, 0 , sizeof(S->data_center.passwd));
 			memcpy(S->data_center.passwd, cmd_param+3, len);
 			cfg_set_data_center(&S->data_center);
 			break;
@@ -164,13 +165,90 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				cfg_set_pre_cfg(&tmp_val);
 			}
 			break;
-		case 228:   /* extended_table */
-			if (len < 0 || len > 10) {
+		case 228:	/* extended_table[0] */
+			if (len != 1) {
 				err = ERRCODE_CMD_ERRTYPE;
 				goto out;
 			}
-			memcpy(S->extended_table, &im_val, len);
-			cfg_set_extended_table(S->extended_table,len);
+			if(im_val == 0){
+				err = ERRCODE_CMD_PARAM;
+				goto out;
+			}
+			S->extended_table[0] = im_val;
+			cfg_set_extended_table(S->extended_table,0);
+			break;
+		case 229:	/* extended_table[1] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			S->extended_table[1] = im_val;
+			cfg_set_extended_table(S->extended_table,1);
+			break;
+		case 230:	/* extended_table[2] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			S->extended_table[2] = im_val;
+			cfg_set_extended_table(S->extended_table,2);
+			break;
+		case 231:	/* extended_table[3] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			S->extended_table[3] = im_val;
+			cfg_set_extended_table(S->extended_table,3);
+			break;
+		case 232:	/* extended_table[4] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			S->extended_table[4] = im_val;
+			cfg_set_extended_table(S->extended_table,4);
+			break;
+		case 233:	/* extended_table[5] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			S->extended_table[5] = im_val;
+			cfg_set_extended_table(S->extended_table,5);
+			break;
+		case 234:	/* extended_table[6] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			S->extended_table[6] = im_val;
+			cfg_set_extended_table(S->extended_table,6);
+			break;
+		case 235:	/* extended_table[7] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+
+			S->extended_table[7] = im_val;
+			cfg_set_extended_table(S->extended_table,7);
+			break;
+		case 236:	/* extended_table[8] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			S->extended_table[8] = im_val;
+			cfg_set_extended_table(S->extended_table,8);
+			break;
+		case 237:	/* extended_table[9] */
+			if (len != 1) {
+				err = ERRCODE_CMD_ERRTYPE;
+				goto out;
+			}
+			S->extended_table[9] = im_val;
+			cfg_set_extended_table(S->extended_table,9);
 			break;
 		case 239:	/* operation type */
 			if (im_val == OPERATE_READ_EPC
@@ -271,6 +349,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		}
 #endif
 		uint8_t ex_val;
+		uint8_t get_extended_table[10];
 		switch (addr) {
 		case 0:		/* work mode */
 			ex_val = S->pre_cfg.work_mode;
@@ -308,13 +387,46 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		case 221:	/* pulse periods */
 			ex_val = S->pre_cfg.wg_pulse_periods;
 			break;
-		case 228:  {/* get_extended_table */
-			uint8_t get_extended_table[10];
-			cfg_get_extended_table(get_extended_table,10);
-			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, CMD_EXE_SUCCESS, 
-				get_extended_table, 10);
-			return;
-			}
+		case 228:	/* extended_table[0] */
+			cfg_get_extended_table(get_extended_table,0);
+			ex_val =  get_extended_table[0];
+			break;
+		case 229:	/* extended_table[1] */
+			cfg_get_extended_table(get_extended_table,1);
+			ex_val =  get_extended_table[1];
+			break;
+		case 230:	/* extended_table[2] */
+			cfg_get_extended_table(get_extended_table,2);
+			ex_val =  get_extended_table[2];
+			break;
+		case 231:	/* extended_table[3] */
+			cfg_get_extended_table(get_extended_table,3);
+			ex_val =  get_extended_table[3];
+			break;
+		case 232:	/* extended_table[4] */
+			cfg_get_extended_table(get_extended_table,4);
+			ex_val =  get_extended_table[4];
+			break;
+		case 233:	/* extended_table[5] */
+			cfg_get_extended_table(get_extended_table,5);
+			ex_val =  get_extended_table[5];
+			break;
+		case 234:	/* extended_table[6] */
+			cfg_get_extended_table(get_extended_table,6);
+			ex_val =  get_extended_table[6];
+			break;
+		case 235:	/* extended_table[7] */
+			cfg_get_extended_table(get_extended_table,7);
+			ex_val =  get_extended_table[7];
+			break;
+		case 236:	/* extended_table[8] */
+			cfg_get_extended_table(get_extended_table,8);
+			ex_val =  get_extended_table[8];
+			break;
+		case 237:	/* extended_table[9] */
+			cfg_get_extended_table(get_extended_table,9);
+			ex_val =  get_extended_table[9];
+			break;		
 		case 239:	/* operation type */
 			ex_val = S->pre_cfg.oper_mode;
 			break;

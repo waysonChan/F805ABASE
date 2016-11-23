@@ -4,6 +4,7 @@
 #include "config.h"
 #include "gpio.h"
 #include "report_tag.h"
+#include "utility.h"
 
 
 #include <string.h>
@@ -347,7 +348,10 @@ system_param_t *sys_param_new(void)
 
 	/* 拓展参数初始化 */
 	uint8_t get_extended_table[10];
-	cfg_get_extended_table(get_extended_table,10);
+	int index = 0;
+	for(index = 0;index < 10;index++){
+		cfg_get_extended_table(get_extended_table,index);
+	}
 	memcpy(S->extended_table,get_extended_table,10);
 
 	/* 工作状态 */	
@@ -423,6 +427,14 @@ system_param_t *sys_param_new(void)
 		delay_timer_init(S);
 		triggerstatus_timer_init(S);
 	}
+
+	/* 设置APN   */
+	if(S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS){
+		set_gprs_apn(S->data_center.apn);
+		set_chap_secrets(S->data_center.username, S->data_center.passwd);
+		set_gprs_wave(S->data_center.username);
+	}
+	
 out:
 	return S;
 }

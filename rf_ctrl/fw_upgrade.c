@@ -230,7 +230,6 @@ int upgrade_linux_file(const char *file_name)
 		return -1;
 	}
 #endif
-	/* 复制到 f806 文件夹 */
 	char cmd[MAX_UPGRADE_CMD_LEN] = {0};
 
 	/* rcS  复制到/etc/init.d/   文件夹 */
@@ -245,7 +244,7 @@ int upgrade_linux_file(const char *file_name)
 		return 0;
 	}
 
-	/* 复制到 f866 文件夹 */
+	/* 复制到 f806 文件夹 */
 	if(!strcmp(file_name,"f806.cfg")){
 		system("cp /f806/f806.cfg /f806/f806.cfg.bk");
 	}

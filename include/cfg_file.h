@@ -85,9 +85,9 @@ typedef struct _eth0 {
 	char mac[MAC_ADDR_LEN+1];
 } eth0_t, *eth0_pt;
 
-#define DSC_APN_LEN			16
-#define DSC_USERNAME_LEN		16
-#define DSC_PASSWD_LEN			16
+#define DSC_APN_LEN				64
+#define DSC_USERNAME_LEN		64
+#define DSC_PASSWD_LEN			64
 typedef struct {
 	int tcp_port;
 	char ip[ETH_ADDR_LEN];

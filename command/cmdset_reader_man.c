@@ -74,6 +74,19 @@ static void ec_reader_man_rfpwd(r2h_connect_t *C, system_param_t *S, ap_connect_
 		S->pre_cfg.work_mode = WORK_MODE_COMMAND;//herui
 		log_msg("work mode =%d\n",S->pre_cfg.work_mode);
 		err = stop_read_tag(S, A);
+		switch(C->conn_type){
+		case R2H_TCP:
+			S->pre_cfg.upload_mode = UPLOAD_MODE_TCP;
+			break;
+		case R2H_UDP:
+			S->pre_cfg.upload_mode = UPLOAD_MODE_UDP;
+			break;
+		case R2H_RS232:
+			S->pre_cfg.upload_mode = UPLOAD_MODE_RS232;
+			break;
+		default:
+			S->pre_cfg.upload_mode = UPLOAD_MODE_TCP;
+		}
 		break;
 	case RFPWD_ON:
 		write_mac_register(A, HST_CMD, CMD_CWON);

@@ -1109,9 +1109,9 @@ out:
 
 
 
-int cfg_get_extended_table(uint8_t *extended_table, int len)
+int cfg_get_extended_table(uint8_t *extended_table, int index)
 {
-	int i, err = 0;	
+	int err = 0;	
 	config_t cfg;
 	config_setting_t *s;
 
@@ -1130,9 +1130,7 @@ int cfg_get_extended_table(uint8_t *extended_table, int len)
 		goto out;
 	}
 
-	for (i = 0; i < len; i++) {
-		extended_table[i] = config_setting_get_int_elem(s, i);
-	}
+	extended_table[index] = config_setting_get_int_elem(s, index);
 
 out:
 	config_destroy(&cfg);
@@ -1142,9 +1140,9 @@ out:
 
 
 
-int cfg_set_extended_table(uint8_t *extended_table, int len)
+int cfg_set_extended_table(uint8_t *extended_table, int index)
 {
-	int i, err = 0;	
+	int err = 0;	
 	config_t cfg;
 	config_setting_t *s;
 
@@ -1163,9 +1161,8 @@ int cfg_set_extended_table(uint8_t *extended_table, int len)
 		goto out;
 	}
 
-	for (i = 0; i < len; i++) {
-		 config_setting_set_int_elem(s, i, extended_table[i]);
-	}
+	config_setting_set_int_elem(s, index, extended_table[index]);
+
 
 	if (!(config_write_file(&cfg, CONFIG_FILE_NAME))) {
 		log_msg("%s: config_write_file() ERR!", __FUNCTION__);

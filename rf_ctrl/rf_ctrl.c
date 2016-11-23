@@ -1156,8 +1156,6 @@ int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 		if(S->ant_array[i].enable){
 			switch(C->ant_trigger.trigger_bind_style[i]){
 			case 0:
-				//C->ant_trigger.current_able_ant |= 1<<i;
-				//S->cur_ant = i+1;
 				break;//disable mode
 			case 1:
 				if( S->gpio_dece.gpio1_val ){
@@ -1172,7 +1170,7 @@ int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 				}
 				break;
 			case 3:
-				if( S->gpio_dece.gpio1_val || S->gpio_dece.gpio1_val ){
+				if( S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val ){
 					C->ant_trigger.current_able_ant |= 1<<i;
 					S->cur_ant = i+1;
 				}
@@ -1282,17 +1280,18 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if((key_vals[0]==1) || (key_vals[1]==1)){//´¥·¢Éè±¸	
 		action_identify(S,key_vals[0],key_vals[1]);
 		C->set_delay_timer_cnt = 0;			 //RESET CNT
-		C->ant_trigger.total_timer_cnt = 0;
-		C->ant_trigger.current_antenna_cnt = 0;		
+		C->set_delay_timer_flag = 0;
+		C->ant_trigger.total_timer_cnt = 0;				
+		memset(C->ant_trigger.antenna_cnt,0,sizeof(C->ant_trigger.antenna_cnt));
 		log_msg("trigger start read tag,%d,%d\n",S->gpio_dece.gpio1_val,S->gpio_dece.gpio2_val);
 		err = trigger_send_cmd(C,S,A);		
 	} else {
 		action_report(S);
 		if(S->extended_table[0] != 0){
-			C->set_delay_timer_flag = true;
-			C->set_delay_timer_cnt = 0;			 //RESET CNT
-			C->ant_trigger.total_timer_cnt = 0;
-			C->ant_trigger.current_antenna_cnt = 0;
+			C->set_delay_timer_flag = 1;
+			C->set_delay_timer_cnt = 0;
+			C->ant_trigger.total_timer_cnt = 0;	
+			memset(C->ant_trigger.antenna_cnt,0,sizeof(C->ant_trigger.antenna_cnt));
 			//here to restart the reading
 			if(last_val[0] != S->gpio_dece.gpio1_val || last_val[1] != S->gpio_dece.gpio2_val){
 				S->gpio_dece.gpio1_val = last_val[0];
@@ -1304,6 +1303,9 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				S->gpio_dece.gpio2_val = key_vals[1];
 			}
 		}
+		C->set_delay_timer_cnt = 0;			 //RESET CNT
+		C->ant_trigger.total_timer_cnt = 0;
+		memset(C->ant_trigger.antenna_cnt,0,sizeof(C->ant_trigger.antenna_cnt));
 	}
 	return err;
 }
