@@ -244,16 +244,17 @@ int upgrade_linux_file(const char *file_name)
 		return 0;
 	}
 
-	/* 复制到 f806 文件夹 */
-	if(!strcmp(file_name,"f806.cfg")){
-		system("cp /f806/f806.cfg /f806/f806.cfg.bk");
+	/*驱动、配置、应用程序 复制到 f806 文件夹，其他文件保留在upgrade */
+	if(strstr(file_name,".ko") || strstr(file_name,".cfg") || strstr(file_name,"f806A")){
+		if(!strcmp(file_name,"f806.cfg")){
+			system("cp /f806/f806.cfg /f806/f806.cfg.bk");
+		}
+		snprintf(cmd, MAX_UPGRADE_CMD_LEN, "cp /f806/upgrade/%s /f806/%s", file_name, file_name);
+		if (system(cmd) < 0) {
+			log_msg("system error");
+			return -1;
+		}
 	}
-	snprintf(cmd, MAX_UPGRADE_CMD_LEN, "cp /f806/upgrade/%s /f806/%s", file_name, file_name);
-	if (system(cmd) < 0) {
-		log_msg("system error");
-		return -1;
-	}
-
 	/* 改为可执行 */
 	if (!strncmp(file_name, "i802s", MAX_FILE_NAME_LEN)
 		|| !strncmp(file_name, "f806A", MAX_FILE_NAME_LEN)

@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 LIST_HEAD(tag_report_list);
+static void send_wiegand(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
 
 
 /* 链表尾添加 */
@@ -221,7 +222,9 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 
 	switch (S->pre_cfg.upload_mode) {
 	case UPLOAD_MODE_WIEGAND:
-		return tag_report_list_add(A, ptag);
+		//tag_report_list_add(A, ptag);
+		send_wiegand(C,S,A);// 韦根一次只发一个tag 
+		return 0;
 	case UPLOAD_MODE_RS232:
 		//_append_tag_time(ptag);
 		C->conn_type = R2H_RS232;
@@ -272,7 +275,9 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		cmd_id = S->pre_cfg.oper_mode;
 		switch (S->pre_cfg.upload_mode) {
 		case UPLOAD_MODE_WIEGAND:
-			return tag_report_list_add(A, ptag);
+			//tag_report_list_add(A, ptag);
+			send_wiegand(C,S,A);// 韦根一次只发一个tag 
+			return 0;
 		case UPLOAD_MODE_RS232:
 			_append_tag_time(ptag);
 			C->conn_type = R2H_RS232;
@@ -643,7 +648,6 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if(++A->tag_report.filter_count >= A->tag_report.filter_time * 10){//100ms过滤
 		A->tag_report.filter_count = 0;
 		flash_send_tag(C,S,A);
-		send_wiegand(C,S,A);// 韦根一次只发一个tag 
 	}
 	
 	/*删除链表中的卡*/
