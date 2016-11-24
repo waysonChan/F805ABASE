@@ -56,12 +56,12 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
 		if(A->tag_report.filter_enable == false){
-			A->tag_report.filter_time = 2;
+			A->tag_report.filter_time = 2;		
 		}
 	}
 	
 	if (A->tag_report.filter_time) {
-		report_tag_set_timer(A, 10);//10ms
+		report_tag_set_timer(A, 100);//100ms
 	}
 
 	/* 标签选择参数 */

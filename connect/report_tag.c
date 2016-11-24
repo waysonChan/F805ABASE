@@ -15,7 +15,7 @@
 #include <stdlib.h>
 
 LIST_HEAD(tag_report_list);
-static void send_wiegand(r2h_connect_t *C, system_param_t *S, ap_connect_t *A);
+static void send_wiegand(r2h_connect_t *C, system_param_t *S, tag_t *ptag);
 
 
 /* 链表尾添加 */
@@ -55,7 +55,7 @@ int tag_report_list_add(ap_connect_t *A, tag_t *p)
 	new_tag->ant_index = p->ant_index;
 	memcpy(new_tag->data, p->data, p->tag_len);
 
-	new_tag->time_cnt = A->tag_report.filter_time * 10;//100ms
+	new_tag->time_cnt = A->tag_report.filter_time ;//100ms
 
 	/* 3.3防止多次追加时间 */
 	new_tag->has_append_time = false;
@@ -108,7 +108,7 @@ void TimeTickTagFilterList(tag_report_t *tag_report)
             	//删除链表
             	tag_report_list_del(tag_report);
 				l = tag_report_list.next;
-            } else {
+           } else {
 				l = l->next;
 			}
         }
@@ -226,7 +226,7 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 	switch (S->pre_cfg.upload_mode) {
 	case UPLOAD_MODE_WIEGAND:
 		//tag_report_list_add(A, ptag);
-		send_wiegand(C,S,A);// 韦根一次只发一个tag 
+		send_wiegand(C,S,ptag);// 韦根一次只发一个tag 
 		return 0;
 	case UPLOAD_MODE_RS232:
 		//_append_tag_time(ptag);
@@ -279,7 +279,7 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		switch (S->pre_cfg.upload_mode) {
 		case UPLOAD_MODE_WIEGAND:
 			//tag_report_list_add(A, ptag);
-			send_wiegand(C,S,A);// 韦根一次只发一个tag 
+			send_wiegand(C,S,ptag);// 韦根一次只发一个tag 
 			return 0;
 		case UPLOAD_MODE_RS232:
 			_append_tag_time(ptag);
@@ -620,20 +620,18 @@ out:
 	return;
 }
 
-static void send_wiegand(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+static void send_wiegand(r2h_connect_t *C, system_param_t *S, tag_t *ptag)
 {
-	struct list_head *l = tag_report_list.next;
-	tag_t *p = list_entry(l, tag_t, list);
-
 	if (C->conn_type == R2H_NONE 
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
-		uint8_t *ptr = p->data;
-		if (S->pre_cfg.wg_start + S->pre_cfg.wg_len > p->tag_len) {
+		uint8_t *ptr = ptag->data;
+		if (S->pre_cfg.wg_start + S->pre_cfg.wg_len > ptag->tag_len) {
 			log_msg("invalid tag_len");
 		} else if (S->pre_cfg.wg_len == WG_LEN_34) {
 			wiegand_send(C, ptr+S->pre_cfg.wg_start, 4);
 		} else {
 			wiegand_send(C, ptr+S->pre_cfg.wg_start, 3);
+			printf("--------------------------------------\n");
 		}
 	}
 }
@@ -648,14 +646,14 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if(A->tag_report.filter_enable == false)
 		return 0;
 	
-	if(++A->tag_report.filter_count >= A->tag_report.filter_time * 10){//100ms过滤
+	if(++A->tag_report.filter_count >= A->tag_report.filter_time){//100ms过滤
 		A->tag_report.filter_count = 0;
 		flash_send_tag(C,S,A);
 	}
 	
 	/*删除链表中的卡*/
 	TimeTickTagFilterList(&A->tag_report);
-	
+
 	return 0;
 }
 

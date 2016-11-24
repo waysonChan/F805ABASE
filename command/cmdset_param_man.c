@@ -171,8 +171,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 				goto out;
 			}
 			if(im_val == 0){
-				err = ERRCODE_CMD_PARAM;
-				goto out;
+				im_val = 1;
+				S->zero_flag = true;
 			}
 			S->extended_table[0] = im_val;
 			cfg_set_extended_table(S->extended_table,0);
@@ -389,6 +389,11 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			break;
 		case 228:	/* extended_table[0] */
 			cfg_get_extended_table(get_extended_table,0);
+			if(S->zero_flag == true){
+				ex_val = 0;
+				S->zero_flag = false;
+				break;
+			}
 			ex_val =  get_extended_table[0];
 			break;
 		case 229:	/* extended_table[1] */
