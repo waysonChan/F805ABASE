@@ -47,7 +47,7 @@ int command_execute(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	uint8_t cmd_id = C->recv.frame.cmd_id;
 
 //if(cmd_id != 0x58)
-	//log_msg("%s: cmd_id = 0X%02X.", __FUNCTION__, cmd_id);
+	log_msg("%s: cmd_id = 0X%02X.", __FUNCTION__, cmd_id);
 	for (set = command_set_head; set; set = set->next) {
 		for (cmd = set->cmd_head; cmd; cmd = cmd->next) {
 			if (cmd->cmd_id == cmd_id) {

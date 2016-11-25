@@ -69,7 +69,7 @@ static int _r2h_gprs_close(r2h_connect_t *C)
 	C->gprs_priv.connected = false;
 	close(C->r2h[R2H_GPRS].fd);
 	C->r2h[R2H_GPRS].fd = -1;
-	C->conn_type = R2H_NONE;
+	//C->conn_type = R2H_NONE;
 	return 0;
 }
 
@@ -202,7 +202,6 @@ int r2h_gprs_timer_trigger(r2h_connect_t *C)
 		_r2h_gprs_close(C);
 		_gprs_connect_try(C);
 	}
-
 	return 0;
 }
 

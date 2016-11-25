@@ -147,7 +147,7 @@ static int conn_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		if (C->r2h[i].fd != -1 && FD_ISSET(C->r2h[i].fd, readset)) {
 			ret = r2h_connect_check_in(C, i);
 			C->recv.rlen = ret;
-			while(C->recv.rlen) {
+			do{
 				if (r2h_frame_parse(C, ret) == FRAME_COMPLETE) {
 					command_execute(C, S, A);
 					if((S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI && C->conn_type == R2H_WIFI)
@@ -157,7 +157,7 @@ static int conn_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 				} else {
 					C->conn_type = cnn;
 				}
-			}
+			}while(C->recv.rlen);
 			C->count = 0;
 		}
 	}
@@ -201,6 +201,16 @@ static int work_mode_pre_config (r2h_connect_t *C, system_param_t *S, ap_connect
 	return 0;
 }	
 
+
+static void timer_start(system_param_t *S,ap_connect_t *A)
+{
+	if (A->tag_report.filter_time) {
+		report_tag_set_timer(A,100);
+	}
+
+	heartbeat_timer_set(S,5);
+}
+
 int main(int argc, char *argv[])  
 {
 	if (argc == 2 && !strcmp(argv[1], "-d")) {
@@ -217,7 +227,9 @@ int main(int argc, char *argv[])
 		log_quit("signal error");
 
 	work_mode_pre_config(C,S,A);
-	
+
+	timer_start(S,A);
+
 	while (1) {
 		int maxfd = 0;
 		fd_set readset, writeset;

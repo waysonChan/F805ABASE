@@ -14,6 +14,7 @@
 #include <sys/timerfd.h>
 #include <stdlib.h>
 
+
 LIST_HEAD(tag_report_list);
 static void send_wiegand(r2h_connect_t *C, system_param_t *S, tag_t *ptag);
 
@@ -55,7 +56,7 @@ int tag_report_list_add(ap_connect_t *A, tag_t *p)
 	new_tag->ant_index = p->ant_index;
 	memcpy(new_tag->data, p->data, p->tag_len);
 
-	new_tag->time_cnt = A->tag_report.filter_time ;//100ms
+	new_tag->time_cnt = A->tag_report.filter_time;//100ms
 
 	/* 3.3防止多次追加时间 */
 	new_tag->has_append_time = false;
@@ -103,7 +104,7 @@ void TimeTickTagFilterList(tag_report_t *tag_report)
         	tag_t *tmp = list_entry(l, tag_t, list);
             tmp->time_cnt -=  1; //超时时间处理,各个节点的超时时间值减去定时器的步进值
 			
-            if(tmp->time_cnt < 0)//超时时间到了,要删除该节点
+            if(tmp->time_cnt <= 0)//超时时间到了,要删除该节点
             {
             	//删除链表
             	tag_report_list_del(tag_report);
@@ -178,21 +179,9 @@ int work_command_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		log_msg("_finally_tag_send: invalid cmd_id");
 		return -1;
 	}
-	
-	
+
 	/* 已建立连接 */
 	if (C->conn_type != R2H_NONE) {
-		switch (S->pre_cfg.upload_mode) {
-		case UPLOAD_MODE_RS232:
-			C->conn_type = R2H_RS232;
-			break;
-		case UPLOAD_MODE_UDP:
-			C->conn_type = R2H_UDP;
-			break;
-		case UPLOAD_MODE_TCP:
-			C->conn_type = R2H_TCP;
-			break;
-		}
 		C->tmp_send_len = ptag->tag_len;
 		memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
@@ -212,8 +201,6 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 		return -1;
 	}
 
-
-
 	/* 已建立连接 */
 	if (C->conn_type != R2H_NONE) {
 		_append_tag_time(ptag);
@@ -225,7 +212,6 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 
 	switch (S->pre_cfg.upload_mode) {
 	case UPLOAD_MODE_WIEGAND:
-		//tag_report_list_add(A, ptag);
 		send_wiegand(C,S,ptag);// 韦根一次只发一个tag 
 		return 0;
 	case UPLOAD_MODE_RS232:
@@ -278,7 +264,6 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 		cmd_id = S->pre_cfg.oper_mode;
 		switch (S->pre_cfg.upload_mode) {
 		case UPLOAD_MODE_WIEGAND:
-			//tag_report_list_add(A, ptag);
 			send_wiegand(C,S,ptag);// 韦根一次只发一个tag 
 			return 0;
 		case UPLOAD_MODE_RS232:
@@ -391,6 +376,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	if (A->tag_report.filter_enable){
 		if(tag_report_list_add(A, ptag) == 1){
 			ptag->has_append_time = false;
+			//printf("add a new tag : 0x%02x 0x%02x 0x%02x \n",ptag->data[0],ptag->data[1],ptag->data[2]);
 			return _finally_tag_send(C, S, A, ptag);
 		}else{
 			return 0;
@@ -631,10 +617,10 @@ static void send_wiegand(r2h_connect_t *C, system_param_t *S, tag_t *ptag)
 			wiegand_send(C, ptr+S->pre_cfg.wg_start, 4);
 		} else {
 			wiegand_send(C, ptr+S->pre_cfg.wg_start, 3);
-			printf("--------------------------------------\n");
 		}
 	}
 }
+
 int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	uint64_t num_exp;
@@ -643,10 +629,11 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return -1;
 	}	
 	
-	if(A->tag_report.filter_enable == false)
+	if(A->tag_report.filter_enable == false 
+		&&  S->pre_cfg.upload_mode != UPLOAD_MODE_WIEGAND)
 		return 0;
 	
-	if(++A->tag_report.filter_count >= A->tag_report.filter_time){//100ms过滤
+	if(++A->tag_report.filter_count >= A->tag_report.filter_time ){//过滤时间
 		A->tag_report.filter_count = 0;
 		flash_send_tag(C,S,A);
 	}
@@ -660,18 +647,18 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 int report_tag_set_timer(ap_connect_t *A, uint32_t ms)
 {
 	struct itimerspec its = {
-		.it_interval.tv_sec = ms / 1000,
+		.it_interval.tv_sec = (ms / 1000),
 		.it_interval.tv_nsec = (ms % 1000) * 1000000,
 		.it_value.tv_sec = 1,
-		.it_value.tv_nsec = 0,
+		.it_value.tv_nsec = (ms % 1000) * 1000000,
 	};
 
 	if (timerfd_settime(A->tag_report.filter_timer, 0, &its, NULL) < 0) {
 		log_ret("timerfd_settime");
 		return -1;
 	}
-	
 	A->tag_report.filter_its = its;
+	
 	return 0;
 }
 
@@ -738,14 +725,6 @@ int heartbeat_timer_int(system_param_t *S)
 	} 
 	
 	bzero(&S->heartbeat_its, sizeof(struct itimerspec));
-	heartbeat_timer_set(S,5);
-	if (timerfd_settime(S->heartbeat_timer, 0, &S->heartbeat_its, NULL) < 0) {
-		log_ret("timerfd_settime error");
-		close(S->heartbeat_timer);
-		return -1;
-	}else{
-		log_msg("heartbeat_timer_int successful\n");
-	}
 
 	return 0;
 }

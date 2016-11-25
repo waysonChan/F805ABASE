@@ -1287,21 +1287,19 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		err = trigger_send_cmd(C,S,A);		
 	} else {
 		action_report(S);
-		if(S->extended_table[0] != 0){
-			C->set_delay_timer_flag = 1;
-			C->set_delay_timer_cnt = 0;
-			C->ant_trigger.total_timer_cnt = 0;	
-			memset(C->ant_trigger.antenna_cnt,0,sizeof(C->ant_trigger.antenna_cnt));
-			//here to restart the reading
-			if(last_val[0] != S->gpio_dece.gpio1_val || last_val[1] != S->gpio_dece.gpio2_val){
-				S->gpio_dece.gpio1_val = last_val[0];
-				S->gpio_dece.gpio2_val = last_val[1];
-				log_msg("reset read,status is %d,%d\n",S->gpio_dece.gpio1_val,S->gpio_dece.gpio2_val);
-				err = trigger_send_cmd(C,S,A);		
-				//reset to current
-				S->gpio_dece.gpio1_val = key_vals[0];
-				S->gpio_dece.gpio2_val = key_vals[1];
-			}
+		C->set_delay_timer_flag = 1;
+		C->set_delay_timer_cnt = 0;
+		C->ant_trigger.total_timer_cnt = 0;	
+		memset(C->ant_trigger.antenna_cnt,0,sizeof(C->ant_trigger.antenna_cnt));
+		//here to restart the reading
+		if(last_val[0] != S->gpio_dece.gpio1_val || last_val[1] != S->gpio_dece.gpio2_val){
+			S->gpio_dece.gpio1_val = last_val[0];
+			S->gpio_dece.gpio2_val = last_val[1];
+			log_msg("reset read,status is %d,%d\n",S->gpio_dece.gpio1_val,S->gpio_dece.gpio2_val);
+			err = trigger_send_cmd(C,S,A);		
+			//reset to current
+			S->gpio_dece.gpio1_val = key_vals[0];
+			S->gpio_dece.gpio2_val = key_vals[1];
 		}
 		C->set_delay_timer_cnt = 0;			 //RESET CNT
 		C->ant_trigger.total_timer_cnt = 0;

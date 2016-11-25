@@ -52,17 +52,18 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 	cfg_get_filter_enable(&A->tag_report.filter_enable);
 	cfg_get_filter_time(&A->tag_report.filter_time);
 
-	/* 如果为韦根自动上传自过滤时间为250ms */
+	/* 如果为韦根自动上传自过滤时间为200ms */
 	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
 		if(A->tag_report.filter_enable == false){
+			A->tag_report.filter_enable = true;
 			A->tag_report.filter_time = 2;		
 		}
 	}
 	
-	if (A->tag_report.filter_time) {
-		report_tag_set_timer(A, 100);//100ms
-	}
+	//if (A->tag_report.filter_time) {
+	//	report_tag_set_timer(A, 10);//10ms
+	//}
 
 	/* 标签选择参数 */
 	select_param_t param;

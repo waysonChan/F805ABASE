@@ -313,7 +313,7 @@ system_param_t *sys_param_new(void)
 		system("rm -f /f806/gprs-enable");
 	}
 
-	char *sw_ver = "1.4.21";
+	char *sw_ver = "1.4.22";
 	strncpy(S->sysinfo.mcu_swrev, sw_ver, strlen(sw_ver));
 	log_msg("##########APP Current Version:%s##################",S->sysinfo.mcu_swrev);
 

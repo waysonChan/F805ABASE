@@ -43,6 +43,7 @@ uint16_t triger_status_get_cnt(void);
 int delay_timer_init(system_param_t *S);
 int delay_timer_trigger(r2h_connect_t *C, system_param_t *S,ap_connect_t *A );
 int delay_timer_set(system_param_t *S, int s);
+int heartbeat_timer_set(system_param_t *S, int s);
 
 
 
