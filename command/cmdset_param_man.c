@@ -41,6 +41,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 	const uint8_t *cmd_param = C->recv.frame.param_buf;
 	uint8_t addr = *(cmd_param+1);
 	uint8_t len = *(cmd_param+2);
+	pre_cfg_t tmp_val;
+	cfg_get_pre_cfg(&tmp_val);
 
 	log_msg("type = %d, addr = %d, len = %d", *cmd_param, addr, len);
 
@@ -57,8 +59,6 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		}
 #endif
 		uint8_t im_val = *(cmd_param+3);
-		pre_cfg_t tmp_val;
-		cfg_get_pre_cfg(&tmp_val);
 		
 		switch (addr) {
 		case 0:		/* work mode */
@@ -348,10 +348,11 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		uint8_t get_extended_table[10];
 		switch (addr) {
 		case 0:		/* work mode */
-			ex_val = S->pre_cfg.work_mode;
+			//ex_val = S->pre_cfg.work_mode;
+			ex_val = tmp_val.work_mode;//导出文件值
 			break;
 		case 1:		/* device type */
-			ex_val = S->pre_cfg.dev_type;
+			ex_val = tmp_val.dev_type;
 			break;
 		case 122:	/* dsc apn */
 			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, CMD_EXE_SUCCESS, 
@@ -369,19 +370,19 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			ex_val = S->rs232.baud_rate;
 			break;
 		case 160:	/* weigand start */
-			ex_val = S->pre_cfg.wg_start;
+			ex_val = tmp_val.wg_start;
 			break;
 		case 161:	/* weigand length */
-			ex_val = S->pre_cfg.wg_len;
+			ex_val = tmp_val.wg_len;
 			break;
 		case 162:	/* tid length */
-			ex_val = S->pre_cfg.tid_len;
+			ex_val = tmp_val.tid_len;
 			break;
 		case 220:	/* pulse width */
-			ex_val = S->pre_cfg.wg_pulse_width;
+			ex_val = tmp_val.wg_pulse_width;
 			break;
 		case 221:	/* pulse periods */
-			ex_val = S->pre_cfg.wg_pulse_periods;
+			ex_val = tmp_val.wg_pulse_periods;
 			break;
 		case 228:	/* extended_table[0] */
 			cfg_get_extended_table(get_extended_table,0);
@@ -424,16 +425,16 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			ex_val =  get_extended_table[9];
 			break;		
 		case 239:	/* operation type */
-			ex_val = S->pre_cfg.oper_mode;
+			ex_val = tmp_val.oper_mode;
 			break;
 		case 240:	/* antenna index */
-			ex_val = S->pre_cfg.ant_idx;			
+			ex_val = tmp_val.ant_idx;			
 			break;
 		case 241:	/* communication port */
-			ex_val = S->pre_cfg.upload_mode;
+			ex_val = tmp_val.upload_mode;
 			break;
 		case 249:	/* flash enable */
-			ex_val = S->pre_cfg.flash_enable;
+			ex_val = tmp_val.flash_enable;
 			break;
 		case 250: {	/* dsc ip */
 			uint8_t dsc_ip[DSC_IP_LEN] = {0};
@@ -452,8 +453,13 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			err = ERRCODE_CMD_ERRTYPE;
 			goto out;
 		}
-
-		command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, err, &ex_val, 1);
+		
+		if(len == 1){
+			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, err, &ex_val, 1);
+		}else{
+			err = ERRCODE_CMD_PARAM;
+			command_answer(C, COMMAND_PARAMETER_MAN_PARATABLE, err, &ex_val, 1);
+		}
 		return;
 	}
 	default:

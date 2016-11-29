@@ -45,7 +45,7 @@ static void ec_recv_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_
 
 
 
-static void ec_recv_tag_confirm_wifi(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+static void ec_recv_tag_confirm_wireless(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	if (A->tag_report.filter_enable == false
 		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
@@ -84,9 +84,9 @@ static command_t cmd_recv_tag_confirm = {
 	.execute = ec_recv_tag_confirm,
 };
 
-static command_t cmd_recv_tag_confirm_wifi = {
-	.cmd_id = COMMAND_RECV_TAG_CONFIRM_WIFI,
-	.execute = ec_recv_tag_confirm_wifi,
+static command_t cmd_recv_tag_confirm_wireless = {
+	.cmd_id = COMMAND_RECV_TAG_CONFIRM_WIRELESS,
+	.execute = ec_recv_tag_confirm_wireless,
 };
 
 static command_t cmd_recv_tag_confirm_trigger_tstaus = {
@@ -103,7 +103,7 @@ int data_center_init(void)
 {
 	int err = command_set_register(&cmdset_data_center);
 	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm);
-	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm_wifi);
+	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm_wireless);
 	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm_trigger_tstaus);
 	return err;
 }

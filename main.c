@@ -204,10 +204,7 @@ static int work_mode_pre_config (r2h_connect_t *C, system_param_t *S, ap_connect
 
 static void timer_start(system_param_t *S,ap_connect_t *A)
 {
-	if (A->tag_report.filter_time) {
-		report_tag_set_timer(A,100);
-	}
-
+	report_tag_set_timer(A,100);
 	heartbeat_timer_set(S,5);
 }
 

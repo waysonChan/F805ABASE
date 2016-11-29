@@ -259,7 +259,7 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag){
 	uint8_t cmd_id;
 	int ret = 0;
-	
+
 	if(C->conn_type == R2H_NONE){
 		cmd_id = S->pre_cfg.oper_mode;
 		switch (S->pre_cfg.upload_mode) {
@@ -334,6 +334,7 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 
 static int _finally_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t *ptag) {
 	int ret = 0;
+
 	switch(S->pre_cfg.work_mode) {
 	case WORK_MODE_COMMAND:
 		ret = work_command_send_tag(C,S,A,ptag);
@@ -376,13 +377,11 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	if (A->tag_report.filter_enable){
 		if(tag_report_list_add(A, ptag) == 1){
 			ptag->has_append_time = false;
-			//printf("add a new tag : 0x%02x 0x%02x 0x%02x \n",ptag->data[0],ptag->data[1],ptag->data[2]);
 			return _finally_tag_send(C, S, A, ptag);
 		}else{
 			return 0;
 		}
 	}
-
 
 	/* 4. 为WIFI和GPRS加上时间 */
 	ptag->has_append_time = false;
@@ -400,7 +399,6 @@ static int _tag_storage_write_all(tag_report_t *tag_report)
 	}
 	tag_storage_fflush();
 	return 0;
-	//return report_tag_reset(tag_report);
 }
 
 #define MAX_SEND_FAIL_TIMES	5
@@ -618,6 +616,7 @@ static void send_wiegand(r2h_connect_t *C, system_param_t *S, tag_t *ptag)
 		} else {
 			wiegand_send(C, ptr+S->pre_cfg.wg_start, 3);
 		}
+		usleep(1);//防止同时读到多个标签导致韦根输出不能识别。
 	}
 }
 
@@ -670,9 +669,8 @@ int report_tag_init(tag_report_t *tag_report)
 		log_ret("timerfd_create error");
 		return -1;
 	}
-
-	tag_report->filter_its.it_value.tv_sec = 0;
-	tag_report->filter_its.it_value.tv_nsec = 0;	
+	
+	bzero(&tag_report->filter_its, sizeof(struct itimerspec));
 	if (timerfd_settime(tag_report->filter_timer, 0, &tag_report->filter_its, NULL) < 0) {
 		log_ret("timerfd_settime error");
 		close(tag_report->filter_timer);
@@ -707,7 +705,7 @@ int heartbeat_timer_set(system_param_t *S, int s)
 	};
 
 	if (timerfd_settime(S->heartbeat_timer, 0, &its, NULL) < 0) {
-		log_ret("timerfd_settime");
+		log_ret("heartbeat timerfd_settime error");
 		return -1;
 	}
 
@@ -920,16 +918,13 @@ int report_triggerstatus(r2h_connect_t *C, system_param_t *S )
 	return 0;
 }
 
-int delay_timer_set(system_param_t *S, int s)
+int delay_timer_set(system_param_t *S, int ms)
 {
-	s = s * 100;
-	log_msg("set time %d ms",s);
-
 	struct itimerspec its = {
-		.it_interval.tv_sec = (s / 1000),
-		.it_interval.tv_nsec = (s % 1000) * 1000000,//重复计数
-		.it_value.tv_sec = (s / 1000),
-		.it_value.tv_nsec = (s % 1000) * 1000000,
+		.it_interval.tv_sec = (ms / 1000),
+		.it_interval.tv_nsec = (ms % 1000) * 1000000,
+		.it_value.tv_sec = (ms / 1000),
+		.it_value.tv_nsec = (ms % 1000) * 1000000,
 
 	};
 
@@ -949,8 +944,7 @@ int delay_timer_init(system_param_t *S)
 		return -1;
 	} 
 	bzero(&S->delay_timer_its, sizeof(struct itimerspec));
-	//delay_timer_set(S,0);//先关闭	
-	delay_timer_set(S,1);//100ms定时
+	delay_timer_set(S,100);//100ms定时
 	return 0;
 }
 

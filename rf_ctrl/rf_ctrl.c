@@ -274,9 +274,6 @@ static int r2000_next_operation(r2h_connect_t *C, system_param_t *S, ap_connect_
 	r2000_error_check(C, S, A);
 	switch (S->work_status) {
 	case WS_READ_EPC_FIXED:
-		r2000_set_ant_rfpower(S, A);
-		write_mac_register(A, HST_CMD, CMD_18K6CINV);
-		break;
 	case WS_READ_EPC_INTURN:
 		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){			
 			trigger_set_next_antenna(C,S,A);
@@ -312,8 +309,19 @@ static int r2000_next_operation(r2h_connect_t *C, system_param_t *S, ap_connect_
 		break;		
 	case WS_READ_TID_FIXED:
 	case WS_READ_EPC_TID_FIXED:
-		r2000_set_ant_rfpower(S, A);
-		r2000_tag_read(&S->tag_param, A);
+		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
+			trigger_set_next_antenna(C,S,A);
+			if(C->ant_trigger.current_able_ant > 0){
+				r2000_set_ant_rfpower(S, A);
+				r2000_tag_read(&S->tag_param, A);
+			} else {
+				S->work_status = WS_STOP;
+				set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
+			}
+		} else {		
+			r2000_set_ant_rfpower(S, A);
+			r2000_tag_read(&S->tag_param, A);
+		}
 		break;
 	case WS_READ_USER:
 		r2000_set_ant_rfpower(S, A);
@@ -355,7 +363,7 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	RFID_PACKET_COMMAND_END cmd_end;
 	RFID_PACKET_18K6C_INVENTORY inv;
 	RFID_PACKET_18K6C_TAG_ACCESS access;
-
+	
 	switch (pcmn->pkt_type) {
 	case RFID_PACKET_TYPE_COMMAND_BEGIN:
 		pkt_len = sizeof(cmd_begin) - sizeof(*pcmn);
@@ -427,12 +435,6 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			epc_tid.data[0] = (epc_length) & 0xff;
 			epc_tid.tag_len = epc_length;
 		}
-#if 0
-		int i;
-		for (i = 0; i < data_len - 4; i++)
-			printf("%02X ", buf[2+i]);
-		printf("\n");
-#endif
 		break;
 	case RFID_PACKET_TYPE_18K6C_TAG_ACCESS:
 		/* 注意:minihost的这里处理有误,何睿的程序是对的 */
@@ -460,18 +462,12 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				sizeof(access.data) - 
 				RFID_18K6C_TAG_ACCESS_PADDING_BYTES(pcmn->flags);
 			if (data_len) {
-#if 1
 				int fixed_data_len = (data_len % 4) ? data_len+2 : data_len;
 				if (rs232_read(A->fd, buf, fixed_data_len) != fixed_data_len) {
 					log_msg("invalid data_len");
 					return -1;
 				}
-#else
-				if (rs232_read(A->fd, buf, data_len) != data_len) {
-					log_msg("invalid data_len");
-					return -1;
-				}
-#endif				
+
 				if ((S->work_status == WS_READ_TID_FIXED) || 
 					(S->work_status == WS_READ_TID_INTURN)) {
 					tag_t tag;
@@ -488,30 +484,13 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 					epc_tid.tag_len += 2;	/* 加上2字节的tag_len */
 					report_tag_send(C, S, A, &epc_tid);
 				} else if (S->work_status == WS_READ_USER) {
-#if 0
-					tag_t tag;
-					tag.ant_index = S->cur_ant;
-					tag.tag_len = data_len;
-					memcpy(tag.data, buf, data_len);
-					report_tag_send(C, S, A, &tag);
-#else
 					tag_user.ant_index = S->cur_ant;
 					tag_user.tag_len = data_len;
 					memcpy(tag_user.data, buf, data_len);
 					read_user_done = 1;
 					log_msg("read done");
-#endif
 				}
-#if 0
-				int i;
-				for (i = 0; i < data_len; i++) {
-					if (i % 10 == 0) {
-						printf("\n");
-					}
-					printf("%02X ", buf[i]);
-				}
-				printf("\n");
-#endif
+
 			}
 			break;
 		}
@@ -569,7 +548,7 @@ int process_cmd_packets(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 int trigger_pre_cfg(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	struct sockaddr_in *paddr;
 	paddr = &C->udp_client_addr;
-	
+	int i;
 	if(S->pre_cfg.upload_mode == UPLOAD_MODE_UDP) {
 		memset(&C->udp_client_addr, 0, sizeof(C->udp_client_addr)); 
 		C->udp_client_addr.sin_family = AF_INET;
@@ -582,24 +561,14 @@ int trigger_pre_cfg(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	}
 	
 	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
-		C->ant_trigger.trigger_bind_style[0] = S->extended_table[1];
-		C->ant_trigger.trigger_bind_style[1] = S->extended_table[2];
-		C->ant_trigger.trigger_bind_style[2] = S->extended_table[3];
-		C->ant_trigger.trigger_bind_style[3] = S->extended_table[4];
-		
-		C->ant_trigger.use_time[0] 	 = S->extended_table[5];
-		C->ant_trigger.use_time[1] 	 = S->extended_table[6];
-		C->ant_trigger.use_time[2] 	 = S->extended_table[7];
-		C->ant_trigger.use_time[3] 	 = S->extended_table[8];
-		
-		if(C->ant_trigger.trigger_bind_style[0])
-			C->ant_trigger.total_timer 			 = C->ant_trigger.use_time[0];
-		if(C->ant_trigger.trigger_bind_style[1])
-			C->ant_trigger.total_timer 			+= C->ant_trigger.use_time[1];
-		if(C->ant_trigger.trigger_bind_style[2])
-			C->ant_trigger.total_timer 			+= C->ant_trigger.use_time[2];
-		if(C->ant_trigger.trigger_bind_style[3])
-			C->ant_trigger.total_timer          += C->ant_trigger.use_time[3];
+		for(i = 0; i < 4; i++){
+			if(S->ant_array[i].enable){
+				C->ant_trigger.trigger_bind_style[i] = S->extended_table[i+1];
+				C->ant_trigger.use_time[i] 	         = S->extended_table[i+5];
+				if(C->ant_trigger.trigger_bind_style[i])
+					C->ant_trigger.total_timer 		+= C->ant_trigger.use_time[i];
+			}
+		}
 		//触发使能时间按轮询周期计算
 		log_msg("total time=%d ms\n",C->ant_trigger.total_timer*100);
 	}
@@ -608,6 +577,7 @@ int trigger_pre_cfg(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 }
 int auto_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
+
 	switch (S->work_status) {
 	case WS_READ_EPC_FIXED:
 		set_active_antenna(S, S->cur_ant);
@@ -1149,6 +1119,48 @@ void action_report(system_param_t *S)
 
 }
 #endif
+
+int set_trigger_read_fixed(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
+	//find antenna
+	if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4){
+		if(S->ant_array[S->pre_cfg.ant_idx-1].enable){
+			switch(C->ant_trigger.trigger_bind_style[S->pre_cfg.ant_idx-1]){
+			case 0:
+				break;//disable mode
+			case 1:
+				if( S->gpio_dece.gpio1_val ){
+					C->ant_trigger.current_able_ant |= 1<<(S->pre_cfg.ant_idx-1);
+					S->cur_ant = S->pre_cfg.ant_idx;
+				}
+				break;
+			case 2:
+				if( S->gpio_dece.gpio2_val ){
+					C->ant_trigger.current_able_ant |= 1<<(S->pre_cfg.ant_idx-1);
+					S->cur_ant = S->pre_cfg.ant_idx;
+				}
+				break;
+			case 3:
+				if( S->gpio_dece.gpio2_val || S->gpio_dece.gpio1_val ){
+					C->ant_trigger.current_able_ant |= 1<<(S->pre_cfg.ant_idx-1);
+					S->cur_ant = S->pre_cfg.ant_idx;
+				}
+				break;//any trigger
+			default:
+				break;
+			}
+		}
+	}
+
+	if(C->ant_trigger.current_able_ant == 0){
+		log_msg("invalid right trigger");
+		return -1;
+	}
+	set_active_antenna(S, S->cur_ant);
+	r2000_set_ant_rfpower(S, A);
+	return 0;
+}
+
+
 int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	//find antenna
 	int i;
@@ -1192,43 +1204,56 @@ int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 
 int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
-	int err = 0;
+	int err = -1;
 	if(S->work_status == WS_STOP)
 	{
-		gettimeofday(&S->last_ant_change_time, NULL);
 		if(r2000_error_check(C, S, A)<0) {
 			log_msg("start error");
 			return -1;
 		}
-		
 		switch (S->pre_cfg.oper_mode) {
 		case OPERATE_READ_EPC:
 			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
-				S->work_status = WS_READ_EPC_FIXED;
-				S->cur_ant = S->pre_cfg.ant_idx;
-				auto_read_tag(C, S, A);
+				err = set_trigger_read_fixed(C, S, A);
+				if(err == 0){
+					S->work_status = WS_READ_EPC_FIXED;
+					S->cur_ant = S->pre_cfg.ant_idx;
+					write_mac_register(A, HST_CMD, CMD_18K6CINV);
+				}
 			} else {
-				S->work_status = WS_READ_EPC_INTURN;
 				err = set_trigger_read(C,S,A);
-				if(err == 0)
+				if(err == 0){
+					S->work_status = WS_READ_EPC_INTURN;
 					write_mac_register(A, HST_CMD, CMD_18K6CINV);				
+				}
 			}
 			break;
 		case OPERATE_READ_TID:
 			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
-				S->work_status = WS_READ_TID_FIXED;
-				S->cur_ant = S->pre_cfg.ant_idx;
-				auto_read_tag(C, S, A);
+				err = set_trigger_read_fixed(C, S, A);
+				if(err == 0){
+					S->work_status = WS_READ_TID_FIXED;
+					S->cur_ant = S->pre_cfg.ant_idx;
+					tag_param_t *T = &S->tag_param;
+					T->access_bank = RFID_18K6C_MEMORY_BANK_TID;
+					T->access_offset = 0;
+					T->access_wordnum = S->pre_cfg.tid_len;//read tid len from cfg file
+					bzero(T->access_pwd, sizeof(T->access_pwd));
+					set_active_antenna(S, S->cur_ant);
+					r2000_set_ant_rfpower(S, A);
+					r2000_tag_read(T, A);
+				}
 			} else {
 				tag_param_t *T = &S->tag_param;
 				T->access_bank = RFID_18K6C_MEMORY_BANK_TID;
 				T->access_offset = 0;
 				T->access_wordnum = S->pre_cfg.tid_len;//read tid len from cfg file
 				bzero(T->access_pwd, sizeof(T->access_pwd));
-				S->work_status = WS_READ_TID_INTURN;
 				err = set_trigger_read(C,S,A);
-				if(err == 0)
+				if(err == 0){
 					r2000_tag_read(T, A);
+					S->work_status = WS_READ_TID_INTURN;
+				}
 			}			
 			break;
 		case OPERATE_READ_USER:
@@ -1239,7 +1264,7 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				S->cur_ant = 1;
 			}
 			S->work_status = WS_READ_USER;
-			auto_read_tag(C, S, A);
+			err = auto_read_tag(C, S, A);
 			break;
 		default:
 			S->work_status = WS_STOP;
@@ -1247,6 +1272,8 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			return -1;
 		}
 		
+		if(err == 0)
+			gettimeofday(&S->last_ant_change_time, NULL);
 	}
 	
 	return err;
@@ -1255,7 +1282,8 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 /* 触发读卡功能 */
 int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
-	unsigned char key_vals[2],last_val[2],err = 0;
+	unsigned char key_vals[2],last_val[2];
+	int err = -1;
 	if(read(S->gpio_dece.fd, key_vals, sizeof(key_vals)) < 0){
 		log_ret("trigger_to_read_tag read()\n");
 		return -1;
@@ -1279,31 +1307,37 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	
 	if((key_vals[0]==1) || (key_vals[1]==1)){//触发设备	
 		action_identify(S,key_vals[0],key_vals[1]);
-		C->set_delay_timer_cnt = 0;			 //RESET CNT
-		C->set_delay_timer_flag = 0;
-		C->ant_trigger.total_timer_cnt = 0;				
-		memset(C->ant_trigger.antenna_cnt,0,sizeof(C->ant_trigger.antenna_cnt));
-		log_msg("trigger start read tag,%d,%d\n",S->gpio_dece.gpio1_val,S->gpio_dece.gpio2_val);
 		err = trigger_send_cmd(C,S,A);		
+		if(err == 0){
+			C->set_delay_timer_cnt = 0;			 //RESET CNT
+			C->ant_trigger.total_timer_cnt = 0;
+			C->ant_trigger.antenna_cnt[0] = 0;	
+			C->ant_trigger.antenna_cnt[1] = 0;	
+			C->ant_trigger.antenna_cnt[2] = 0;	
+			C->ant_trigger.antenna_cnt[3] = 0;
+		}
 	} else {
 		action_report(S);
-		C->set_delay_timer_flag = 1;
-		C->set_delay_timer_cnt = 0;
-		C->ant_trigger.total_timer_cnt = 0;	
-		memset(C->ant_trigger.antenna_cnt,0,sizeof(C->ant_trigger.antenna_cnt));
 		//here to restart the reading
 		if(last_val[0] != S->gpio_dece.gpio1_val || last_val[1] != S->gpio_dece.gpio2_val){
 			S->gpio_dece.gpio1_val = last_val[0];
 			S->gpio_dece.gpio2_val = last_val[1];
-			log_msg("reset read,status is %d,%d\n",S->gpio_dece.gpio1_val,S->gpio_dece.gpio2_val);
-			err = trigger_send_cmd(C,S,A);		
+			err = trigger_send_cmd(C,S,A);					
 			//reset to current
 			S->gpio_dece.gpio1_val = key_vals[0];
 			S->gpio_dece.gpio2_val = key_vals[1];
 		}
-		C->set_delay_timer_cnt = 0;			 //RESET CNT
-		C->ant_trigger.total_timer_cnt = 0;
-		memset(C->ant_trigger.antenna_cnt,0,sizeof(C->ant_trigger.antenna_cnt));
+		
+		if(err == 0 
+		|| S->work_status != WS_STOP){
+			C->set_delay_timer_flag = true;
+			C->set_delay_timer_cnt = 0;			 //RESET CNT
+			C->ant_trigger.total_timer_cnt = 0;
+			C->ant_trigger.antenna_cnt[0] = 0;	
+			C->ant_trigger.antenna_cnt[1] = 0;	
+			C->ant_trigger.antenna_cnt[2] = 0;	
+			C->ant_trigger.antenna_cnt[3] = 0;
+		}
 	}
 	return err;
 }

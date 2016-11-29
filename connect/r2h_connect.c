@@ -13,25 +13,13 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 
 	memset(C, 0, sizeof(r2h_connect_t));
 	C->accepted = false;
-	C->recv.rlen = 0;
-	C->send.wlen = 0;
 	C->conn_type = R2H_NONE;
 	C->wifi_transparent_mode = false;
 	C->status_cnt = 6;
-	C->time = 0;
 	C->triger_confirm_flag = false;
 	C->wifi_connect = false;
 	C->tcp_send_symbol = SEND_TYPE_RAM;
-	C->set_delay_timer_flag = 0;
-	C->set_start_timer_cnt = 0;
-	C->set_delay_timer_cnt = 0;
-	S->action_status.status_1 = 0;
-	S->action_status.status_2 = 0;
-	S->action_status.status_3 = 0;
-	S->action_status.status_4 = 0;
-	S->action_status.status_5 = 0;
 	S->action_status.action_flag = false;
-	S->action_status.first_in = 0;
 	S->action_status.report_status = 0xff;
 
 	return C;
