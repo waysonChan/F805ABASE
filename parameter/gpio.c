@@ -212,10 +212,9 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		C->ant_trigger.total_timer_cnt++;
 		C->ant_trigger.antenna_cnt[cur_ant]++;
 	}
-
-
-	//stop this event  
-	if(C->ant_trigger.antenna_cnt[cur_ant] >= C->ant_trigger.total_timer
+	
+	//stop this event
+	if(C->ant_trigger.total_timer_cnt >= C->ant_trigger.total_timer
 		|| C->set_delay_timer_cnt > S->extended_table[0]){
 		for(i = 3; i >= 0; i--){
 			if(S->ant_array[i].enable){
@@ -230,7 +229,6 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		if(C->set_delay_timer_cnt > S->extended_table[0]){
 			C->ant_trigger.current_able_ant = 0;
 			C->set_delay_timer_cnt = 0;
-			int i;
 			for(i = 3; i >= 0; i--){
 				if(S->ant_array[i].enable){
 					switch(C->ant_trigger.trigger_bind_style[i]){

@@ -348,8 +348,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		uint8_t get_extended_table[10];
 		switch (addr) {
 		case 0:		/* work mode */
-			//ex_val = S->pre_cfg.work_mode;
-			ex_val = tmp_val.work_mode;//导出文件值
+			ex_val = tmp_val.work_mode;
 			break;
 		case 1:		/* device type */
 			ex_val = tmp_val.dev_type;

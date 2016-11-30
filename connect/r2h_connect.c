@@ -12,14 +12,9 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	}
 
 	memset(C, 0, sizeof(r2h_connect_t));
-	C->accepted = false;
 	C->conn_type = R2H_NONE;
-	C->wifi_transparent_mode = false;
 	C->status_cnt = 6;
-	C->triger_confirm_flag = false;
-	C->wifi_connect = false;
 	C->tcp_send_symbol = SEND_TYPE_RAM;
-	S->action_status.action_flag = false;
 	S->action_status.report_status = 0xff;
 
 	return C;

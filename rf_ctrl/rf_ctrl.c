@@ -1194,7 +1194,7 @@ int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	}
 
 	if(C->ant_trigger.current_able_ant == 0){
-		log_msg("no the right trigger\n");
+		log_msg("invalid right trigger");
 		return -1;
 	}
 	set_active_antenna(S, S->cur_ant);
@@ -1294,7 +1294,6 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	
 	S->gpio_dece.gpio1_val = key_vals[0];
 	S->gpio_dece.gpio2_val = key_vals[1];
-	//report_triggerstatus(C,S);//ÉÏ´«×´Ì¬
 
 	if(S->pre_cfg.work_mode != WORK_MODE_TRIGGER){
 		return -1;

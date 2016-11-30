@@ -130,7 +130,6 @@ struct r2h_connect {
 	int time;
 	int tmp_send_len;
 	int set_delay_timer_flag;
-	int set_start_timer_cnt;
 	int set_delay_timer_cnt;
 	uint8_t tmp_send_data[256];	/* EPCÂë */
 	char status[10];

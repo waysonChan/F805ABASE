@@ -190,7 +190,6 @@ typedef struct {
 	action_stat action_status;
 
 	uint8_t extended_table[10];
-
 } system_param_t;
 
 extern const uint32_t baud_table[6];

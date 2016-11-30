@@ -53,7 +53,8 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 	cfg_get_filter_time(&A->tag_report.filter_time);
 
 	/* 如果为韦根自动上传自过滤时间为200ms */
-	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC
+	if ((S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC ||
+		S->pre_cfg.work_mode == WORK_MODE_TRIGGER)
 		&& S->pre_cfg.upload_mode == UPLOAD_MODE_WIEGAND) {
 		if(A->tag_report.filter_enable == false){
 			A->tag_report.filter_enable = true;

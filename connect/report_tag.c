@@ -108,8 +108,8 @@ void TimeTickTagFilterList(tag_report_t *tag_report)
             {
             	//删除链表
             	tag_report_list_del(tag_report);
-				l = tag_report_list.next;
-           } else {
+				l = tag_report_list.next;			
+            } else {
 				l = l->next;
 			}
         }
@@ -182,6 +182,9 @@ int work_command_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 
 	/* 已建立连接 */
 	if (C->conn_type != R2H_NONE) {
+		if (C->conn_type == R2H_WIFI || C->conn_type == R2H_GPRS) {
+			_append_tag_time(ptag);
+		}
 		C->tmp_send_len = ptag->tag_len;
 		memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
 		ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
@@ -628,8 +631,7 @@ int report_tag_send_timer(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		return -1;
 	}	
 	
-	if(A->tag_report.filter_enable == false 
-		&&  S->pre_cfg.upload_mode != UPLOAD_MODE_WIEGAND)
+	if(A->tag_report.filter_enable == false)
 		return 0;
 	
 	if(++A->tag_report.filter_count >= A->tag_report.filter_time ){//过滤时间
@@ -648,8 +650,8 @@ int report_tag_set_timer(ap_connect_t *A, uint32_t ms)
 	struct itimerspec its = {
 		.it_interval.tv_sec = (ms / 1000),
 		.it_interval.tv_nsec = (ms % 1000) * 1000000,
-		.it_value.tv_sec = 1,
-		.it_value.tv_nsec = (ms % 1000) * 1000000,
+		.it_value.tv_sec     = (ms / 1000),
+		.it_value.tv_nsec    = (ms % 1000) * 1000000,
 	};
 
 	if (timerfd_settime(A->tag_report.filter_timer, 0, &its, NULL) < 0) {
