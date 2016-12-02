@@ -1214,25 +1214,29 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 		switch (S->pre_cfg.oper_mode) {
 		case OPERATE_READ_EPC:
 			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+				S->work_status = WS_READ_EPC_FIXED;
 				err = set_trigger_read_fixed(C, S, A);
 				if(err == 0){
-					S->work_status = WS_READ_EPC_FIXED;
 					S->cur_ant = S->pre_cfg.ant_idx;
 					write_mac_register(A, HST_CMD, CMD_18K6CINV);
+				}else{
+					S->work_status = WS_STOP;
 				}
 			} else {
+				S->work_status = WS_READ_EPC_INTURN;
 				err = set_trigger_read(C,S,A);
 				if(err == 0){
-					S->work_status = WS_READ_EPC_INTURN;
 					write_mac_register(A, HST_CMD, CMD_18K6CINV);				
+				}else{
+					S->work_status = WS_STOP;
 				}
 			}
 			break;
 		case OPERATE_READ_TID:
 			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
+				S->work_status = WS_READ_TID_FIXED;
 				err = set_trigger_read_fixed(C, S, A);
 				if(err == 0){
-					S->work_status = WS_READ_TID_FIXED;
 					S->cur_ant = S->pre_cfg.ant_idx;
 					tag_param_t *T = &S->tag_param;
 					T->access_bank = RFID_18K6C_MEMORY_BANK_TID;
@@ -1242,6 +1246,8 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 					set_active_antenna(S, S->cur_ant);
 					r2000_set_ant_rfpower(S, A);
 					r2000_tag_read(T, A);
+				}else{
+					S->work_status = WS_STOP;
 				}
 			} else {
 				tag_param_t *T = &S->tag_param;
@@ -1249,10 +1255,12 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 				T->access_offset = 0;
 				T->access_wordnum = S->pre_cfg.tid_len;//read tid len from cfg file
 				bzero(T->access_pwd, sizeof(T->access_pwd));
+				S->work_status = WS_READ_TID_INTURN;
 				err = set_trigger_read(C,S,A);
 				if(err == 0){
 					r2000_tag_read(T, A);
-					S->work_status = WS_READ_TID_INTURN;
+				}else{
+					S->work_status = WS_STOP;
 				}
 			}			
 			break;

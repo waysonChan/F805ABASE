@@ -218,7 +218,9 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		|| C->set_delay_timer_cnt > S->extended_table[0]){
 		for(i = 3; i >= 0; i--){
 			if(S->ant_array[i].enable){
-				if(C->ant_trigger.use_time[i] == 0)//continue mode 
+				if(C->ant_trigger.trigger_bind_style[i] == 0){
+					C->ant_trigger.current_able_ant &=  ~(1<<i);
+				}else if(C->ant_trigger.use_time[i] == 0)//continue mode 
 					C->ant_trigger.current_able_ant |= 1<<i;
 				else
 					C->ant_trigger.current_able_ant &=  ~(1<<i);

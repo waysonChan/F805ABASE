@@ -9,7 +9,9 @@ inline int msec_between(struct timeval start, struct timeval end);
 inline int convert_dec(uint8_t val);
 inline uint8_t convert_hex(int val);
 int set_gprs_apn(const char *new_apn);
-int set_chap_secrets(const char *username, const char *passwd);
+int set_apn_user(const char *username);
+int set_apn_passwd(const char *passwd);
+
 int set_gprs_wave(const char *username);
 
 size_t replace_keyword(uint8_t *buf, size_t sz);

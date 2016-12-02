@@ -84,14 +84,25 @@ int set_gprs_apn(const char *new_apn)
 }
 
 
-int set_chap_secrets(const char *username, const char *passwd){
+int set_apn_user(const char *username){
 	FILE *wfp = fopen("/f806/tmp", "w+");
 	char rep_line[256] = {0};
-	snprintf(rep_line, sizeof(rep_line), "%s       *      %s       *",username, passwd);
+	snprintf(rep_line, sizeof(rep_line), "%s	   *	  ",username);
 	fputs(rep_line, wfp);
 	fclose(wfp);
 	rename("/f806/tmp", "/etc/ppp/chap-secrets");
-	log_msg("set_chap_secrets ok");
+	log_msg("set_apn_user ok");
+	return 0;
+
+}
+
+int set_apn_passwd(const char *passwd){
+	FILE *wfp = fopen("/etc/ppp/chap-secrets", "a");
+	char rep_line[256] = {0};
+	snprintf(rep_line, sizeof(rep_line), "  %s       * ",passwd);
+	fputs(rep_line, wfp);
+	fclose(wfp);
+	log_msg("set_passwd ok\n");
 	return 0;
 }
 

@@ -946,7 +946,6 @@ int delay_timer_init(system_param_t *S)
 		return -1;
 	} 
 	bzero(&S->delay_timer_its, sizeof(struct itimerspec));
-	delay_timer_set(S,100);//100ms¶¨Ê±
 	return 0;
 }
 

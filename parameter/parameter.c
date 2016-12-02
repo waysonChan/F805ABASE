@@ -425,16 +425,8 @@ system_param_t *sys_param_new(void)
 		|| S->pre_cfg.work_mode == WORK_MODE_TRIGGER){ 
 		heartbeat_timer_int(S);
 		delay_timer_init(S);
-		triggerstatus_timer_init(S);
 	}
 
-	/* ÉèÖÃAPN   */
-	if(S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS){
-		set_gprs_apn(S->data_center.apn);
-		set_chap_secrets(S->data_center.username, S->data_center.passwd);
-		set_gprs_wave(S->data_center.username);
-	}
-	
 out:
 	return S;
 }

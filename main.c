@@ -205,7 +205,12 @@ static int work_mode_pre_config (r2h_connect_t *C, system_param_t *S, ap_connect
 static void timer_start(system_param_t *S,ap_connect_t *A)
 {
 	report_tag_set_timer(A,100);
-	heartbeat_timer_set(S,5);
+	if (S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC 
+	|| S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
+		heartbeat_timer_set(S,5);
+		triggerstatus_timer_init(S);		
+		delay_timer_set(S,100);//100ms¶¨Ê±
+	}
 }
 
 int main(int argc, char *argv[])  

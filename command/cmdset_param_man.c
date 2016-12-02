@@ -102,6 +102,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			memset(S->data_center.username, 0 , sizeof(S->data_center.username));
 			memcpy(S->data_center.username, cmd_param+3, len);
 			cfg_set_data_center(&S->data_center);
+			set_apn_user(S->data_center.username);
+			set_gprs_wave(S->data_center.username);
 			break;
 		case 124:	/* dsc passwd */
 			len  = C->recv.frame.param_len - 4;//减去命令字等长度
@@ -112,6 +114,7 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			memset(S->data_center.passwd, 0 , sizeof(S->data_center.passwd));
 			memcpy(S->data_center.passwd, cmd_param+3, len);
 			cfg_set_data_center(&S->data_center);
+			set_apn_passwd(S->data_center.passwd);
 			break;
 		case 159:	/* serial port speed */
 			S->rs232.baud_rate = im_val;
