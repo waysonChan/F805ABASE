@@ -60,7 +60,7 @@ int set_gprs_apn(const char *new_apn)
 	}
 
 	FILE *wfp = fopen("/f806/tmp", "w+");
-	if (rfp == NULL) {
+	if (wfp == NULL) {
 		log_msg("fopen error");
 		return -1;
 	}
@@ -118,7 +118,7 @@ int set_gprs_wave(const char *username)
 	}
 
 	FILE *wfp = fopen("/f806/tmp", "w+");
-	if (rfp == NULL) {
+	if (wfp == NULL) {
 		log_msg("fopen error");
 		return -1;
 	}

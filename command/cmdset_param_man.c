@@ -560,6 +560,11 @@ static void ec_freq_table_config(r2h_connect_t *C, system_param_t *S, ap_connect
 		err = ERRCODE_CMD_FRAME;
 		goto out;
 	}
+	if (S->work_status != WS_STOP) {
+		log_msg("reader busy");
+		err = ERRCODE_OPT_READERBUSY;
+		goto out;
+	}
 
 	int i;
 	for (i = 0; i < *(cmd_param+1); i++) {

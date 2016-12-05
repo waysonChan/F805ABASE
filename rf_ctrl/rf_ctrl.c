@@ -274,6 +274,20 @@ static int r2000_next_operation(r2h_connect_t *C, system_param_t *S, ap_connect_
 	r2000_error_check(C, S, A);
 	switch (S->work_status) {
 	case WS_READ_EPC_FIXED:
+		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){			
+			trigger_set_next_antenna(C,S,A);
+			if(C->ant_trigger.current_able_ant > 0){
+				r2000_set_ant_rfpower(S, A);
+				write_mac_register(A, HST_CMD, CMD_18K6CINV);
+			} else {
+				S->work_status = WS_STOP;
+				set_antenna_led_status(S->cur_ant, LED_COLOR_GREEN, S->pre_cfg.dev_type);
+			}
+		} else {
+			r2000_set_ant_rfpower(S, A);
+			write_mac_register(A, HST_CMD, CMD_18K6CINV);
+		}
+		break;		
 	case WS_READ_EPC_INTURN:
 		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){			
 			trigger_set_next_antenna(C,S,A);
