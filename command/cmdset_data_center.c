@@ -25,21 +25,7 @@ static command_set_t cmdset_data_center = {
  *--------------------------------------------------------------------*/
 static void ec_recv_tag_confirm(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
-	if (A->tag_report.filter_enable == false
-		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
-		return;
-	
-	gprs_priv_t *gprs_priv = &C->gprs_priv;
-	gprs_priv->gprs_fail_cnt = 0;
-	gprs_priv->gprs_wait_flag = false;
-
-	if (gprs_priv->gprs_send_type == SEND_TYPE_RAM) {
-		tag_report_list_del(&A->tag_report);
-	} else {
-		tag_storage_delete(false);
-	}
-	if(S->work_status != WS_STOP)
-		gprs_tag_send_header(C, S, A);
+	return;
 }
 
 
