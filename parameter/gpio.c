@@ -214,7 +214,6 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		}
 	}
 
-
 	//stop this event
 	if(C->set_delay_timer_cnt > S->extended_table[0]){
 		C->set_delay_timer_cnt = 0;

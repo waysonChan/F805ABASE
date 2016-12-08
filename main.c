@@ -66,7 +66,7 @@ static int set_select_para(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 
 	for (i = 0; i < R2H_TOTAL; i++) {
 		if (((i == R2H_TCP) && (!C->accepted))
-			|| ((i == R2H_GPRS) && (!C->gprs_priv.connected))
+			|| ((i == R2H_GPRS) && (C->gprs_priv.connect_in_progress))
 			|| (C->r2h[i].fd < 0))
 			continue;
 		maxfd = MAX(maxfd, C->r2h[i].fd);
@@ -98,7 +98,7 @@ static int timer_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 
 	if ((S->pre_cfg.dev_type & DEV_TYPE_FLAG_GPRS)
 		&& FD_ISSET(C->gprs_priv.gprs_timer, readset)) {
-		r2h_gprs_timer_trigger(C);
+		r2h_gprs_timer_trigger(C,S);
 	}
 	
 	if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER || S->pre_cfg.work_mode == WORK_MODE_AUTOMATIC){

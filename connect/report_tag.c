@@ -824,7 +824,7 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 				if(status_cnt){
 					C->status_send_from_file = true;
 					triger_status_read(buf);
-					//log_msg("timer send trigger from flash : %d\n",status_cnt);
+					log_msg("timer send trigger from flash : %d\n",status_cnt);
 					send_triggerstatus(C,S,buf,sizeof(buf));
 				}else{
 					return -1;

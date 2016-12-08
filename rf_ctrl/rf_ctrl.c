@@ -215,10 +215,8 @@ static void _r2000_error_report(r2h_connect_t *C, uint8_t ant_index, uint32_t ma
 }
 
 #define MAC_ERR_MODULE_NOT_FOUND	0x0801
-#define port_1_up					0x1
-#define port_1_down 				0x2
-#define port_2_up					0x3
-#define port_2_down					0x4
+#define TRIGGER_PORT_1	0x1
+#define TRIGGER_PORT_2	0x2
 
 
 
@@ -1141,7 +1139,7 @@ void action_report(system_param_t *S)
 }
 #endif
 
-int set_trigger_read_fixed(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
+static int set_trigger_read_fixed(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,int style){
 	//find antenna
 	if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4){
 		if(S->ant_array[S->pre_cfg.ant_idx-1].enable){
@@ -1149,20 +1147,23 @@ int set_trigger_read_fixed(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			case 0:
 				break;//disable mode
 			case 1:
-				if( S->gpio_dece.gpio1_val ){
+				if( S->gpio_dece.gpio1_val && style == 1){
 					C->ant_trigger.current_able_ant |= 1<<(S->pre_cfg.ant_idx-1);
+					C->ant_trigger.antenna_cnt[S->pre_cfg.ant_idx-1] = 0;
 					S->cur_ant = S->pre_cfg.ant_idx;
 				}
 				break;
 			case 2:
-				if( S->gpio_dece.gpio2_val ){
+				if( S->gpio_dece.gpio2_val  && style == 2){
 					C->ant_trigger.current_able_ant |= 1<<(S->pre_cfg.ant_idx-1);
+					C->ant_trigger.antenna_cnt[S->pre_cfg.ant_idx-1] = 0;
 					S->cur_ant = S->pre_cfg.ant_idx;
 				}
 				break;
 			case 3:
 				if( S->gpio_dece.gpio2_val || S->gpio_dece.gpio1_val ){
 					C->ant_trigger.current_able_ant |= 1<<(S->pre_cfg.ant_idx-1);
+					C->ant_trigger.antenna_cnt[S->pre_cfg.ant_idx-1] = 0;
 					S->cur_ant = S->pre_cfg.ant_idx;
 				}
 				break;//any trigger
@@ -1182,7 +1183,7 @@ int set_trigger_read_fixed(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 }
 
 
-int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,unsigned char status){
+static int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,int style){
 	//find antenna
 	int i;
 	for(i = 3; i >= 0; i--){
@@ -1191,20 +1192,23 @@ int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,unsign
 			case 0:
 				break;//disable mode
 			case 1:
-				if( S->gpio_dece.gpio1_val && ((status == 1) || (status == 2)) ){
+				if( S->gpio_dece.gpio1_val && style == 1){
 					C->ant_trigger.current_able_ant |= 1<<i;
+					C->ant_trigger.antenna_cnt[i] = 0;
 					S->cur_ant = i+1;
 				}
 				break;
 			case 2:
-				if( S->gpio_dece.gpio2_val && ((status == 3) || (status == 4))){
+				if( S->gpio_dece.gpio2_val && style == 2){
 					C->ant_trigger.current_able_ant |= 1<<i;
+					C->ant_trigger.antenna_cnt[i] = 0;
 					S->cur_ant = i+1;
 				}
 				break;
 			case 3:
 				if( S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val ){
 					C->ant_trigger.current_able_ant |= 1<<i;
+					C->ant_trigger.antenna_cnt[i] = 0;
 					S->cur_ant = i+1;
 				}
 				break;//any trigger
@@ -1223,64 +1227,12 @@ int set_trigger_read(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,unsign
 	return 0;
 }
 
-int clear_trigger1_cnt_time(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	//find antenna
-	int i;
-	for(i = 3; i >= 0; i--){
-		if(S->ant_array[i].enable){
-			switch(C->ant_trigger.trigger_bind_style[i]){
-			case 0:
-				break;//disable mode
-			case 1:
-				if( S->gpio_dece.gpio1_val ){
-					C->ant_trigger.antenna_cnt[i] = 0;
-				}
-				break;
-			case 2:
-				break;
-			case 3:
-				if( S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val ){
-					C->ant_trigger.antenna_cnt[i] = 0;
-				}
-				break;//any trigger
-			default:
-				break;
-			}
-		}
-	}
-	return 0;
-}
 
-int clear_trigger2_cnt_time(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 	//find antenna
-	int i;
-	for(i = 3; i >= 0; i--){
-		if(S->ant_array[i].enable){
-			switch(C->ant_trigger.trigger_bind_style[i]){
-			case 0:
-				break;//disable mode
-			case 1:
-				break;
-			case 2:
-				if( S->gpio_dece.gpio2_val ){
-					C->ant_trigger.antenna_cnt[i] = 0;
-				}
-				break;
-			case 3:
-				if( S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val ){
-					C->ant_trigger.antenna_cnt[i] = 0;
-				}
-				break;//any trigger
-			default:
-				break;
-			}
-		}
-	}
-	return 0;
-}
 
 
-int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, unsigned char status)
+static int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,int style)
 {
 	int err = -1;
 	if(S->work_status == WS_STOP)
@@ -1293,7 +1245,7 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, unsig
 		case OPERATE_READ_EPC:
 			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
 				S->work_status = WS_READ_EPC_FIXED;
-				err = set_trigger_read_fixed(C, S, A);
+				err = set_trigger_read_fixed(C, S, A,style);
 				if(err == 0){
 					S->cur_ant = S->pre_cfg.ant_idx;
 					write_mac_register(A, HST_CMD, CMD_18K6CINV);
@@ -1302,7 +1254,7 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, unsig
 				}
 			} else {
 				S->work_status = WS_READ_EPC_INTURN;
-				err = set_trigger_read(C,S,A,status);
+				err = set_trigger_read(C,S,A,style);
 				if(err == 0){
 					write_mac_register(A, HST_CMD, CMD_18K6CINV);				
 				}else{
@@ -1313,7 +1265,7 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, unsig
 		case OPERATE_READ_TID:
 			if (S->pre_cfg.ant_idx >= 1 && S->pre_cfg.ant_idx <= 4) {
 				S->work_status = WS_READ_TID_FIXED;
-				err = set_trigger_read_fixed(C, S, A);
+				err = set_trigger_read_fixed(C, S, A,style);
 				if(err == 0){
 					S->cur_ant = S->pre_cfg.ant_idx;
 					tag_param_t *T = &S->tag_param;
@@ -1334,7 +1286,7 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, unsig
 				T->access_wordnum = S->pre_cfg.tid_len;//read tid len from cfg file
 				bzero(T->access_pwd, sizeof(T->access_pwd));
 				S->work_status = WS_READ_TID_INTURN;
-				err = set_trigger_read(C,S,A,status);
+				err = set_trigger_read(C,S,A,style);
 				if(err == 0){
 					r2000_tag_read(T, A);
 				}else{
@@ -1369,20 +1321,23 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, unsig
 				case 0:
 					break;//disable mode
 				case 1:
-					if( S->gpio_dece.gpio1_val && ((status == 1) || (status == 2))){
+					if( S->gpio_dece.gpio1_val && style == 1){
 						C->ant_trigger.current_able_ant |= 1<<i;
+						C->ant_trigger.antenna_cnt[i] = 0;
 						S->cur_ant = i+1;
 					}
 					break;
 				case 2:
-					if( S->gpio_dece.gpio2_val  && ((status == 3) || (status == 4)) ){
+					if( S->gpio_dece.gpio2_val && style == 2){
 						C->ant_trigger.current_able_ant |= 1<<i;
+						C->ant_trigger.antenna_cnt[i] = 0;
 						S->cur_ant = i+1;
 					}
 					break;
 				case 3:
 					if( S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val ){
 						C->ant_trigger.current_able_ant |= 1<<i;
+						C->ant_trigger.antenna_cnt[i] = 0;
 						S->cur_ant = i+1;
 					}
 					break;//any trigger
@@ -1391,6 +1346,7 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, unsig
 				}
 			}
 		}
+		err = 0;
 	}
 	
 	return err;
@@ -1400,7 +1356,6 @@ int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, unsig
 int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	unsigned char key_vals[2],last_val[2];
-	unsigned char status = 0;
 	int err = -1;
 	if(read(S->gpio_dece.fd, key_vals, sizeof(key_vals)) < 0){
 		log_ret("trigger_to_read_tag read()\n");
@@ -1425,44 +1380,41 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	
 
 	if(key_vals[0]== 1 && last_val[0] != key_vals[0]){//raise up	
-		status = port_1_up;
 		action_identify(S,key_vals[0],key_vals[1]);
-		err = trigger_send_cmd(C,S,A,status);
-		clear_trigger1_cnt_time(C,S,A);
+		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_1);		
 		if(err == 0){
+			C->set_delay_timer_flag = 0;
 			C->set_delay_timer_cnt = 0;
 		}
 	} else if(key_vals[0] == 0 && last_val[0] != key_vals[0]){//falen down
-		status = port_1_down;
 		action_report(S);
 		S->gpio_dece.gpio1_val = last_val[0];
-		err = trigger_send_cmd(C,S,A,status);	
+		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_1);					
 		//reset to current	
 		S->gpio_dece.gpio1_val = key_vals[0];
-		clear_trigger1_cnt_time(C,S,A);
-		if(err == 0 || S->work_status != WS_STOP){
-			C->set_delay_timer_flag = true;
+		if(err == 0){
+			C->set_delay_timer_flag = 1;
+			C->set_delay_timer_cnt = 0;
 		}
-	}	
+	}
+	
 
 	if(key_vals[1]== 1 && last_val[1] != key_vals[1]){//raise up
-		status = port_2_up;
 		action_identify(S,key_vals[0],key_vals[1]);
-		err = trigger_send_cmd(C,S,A,status);
-		clear_trigger2_cnt_time(C,S,A);
+		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_2);		
 		if(err == 0){
+			C->set_delay_timer_flag = 0;
 			C->set_delay_timer_cnt = 0; 
 		}
 	} else if(key_vals[1] == 0 && last_val[1] != key_vals[1]){//falen down
-		status = port_2_down;
 		action_report(S);	
 		S->gpio_dece.gpio2_val = last_val[1];			
-		err = trigger_send_cmd(C,S,A,status);
+		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_2);					
 		//reset to current				
 		S->gpio_dece.gpio2_val = key_vals[1];
-		clear_trigger2_cnt_time(C,S,A);
-		if(err == 0 || S->work_status != WS_STOP){
-			C->set_delay_timer_flag = true;
+		if(err == 0){
+			C->set_delay_timer_flag = 1;
+			C->set_delay_timer_cnt = 0;
 		}
 	}
 

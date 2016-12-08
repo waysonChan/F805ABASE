@@ -63,7 +63,8 @@ static void ec_18k6c_select_tag(r2h_connect_t *C, system_param_t *S, ap_connect_
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -125,7 +126,8 @@ static void ec_18k6c_read_epc(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		//err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -198,7 +200,8 @@ static void ec_18k6c_read_tid(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		//err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -276,7 +279,8 @@ static void ec_18k6c_read_epc_tid(r2h_connect_t *C, system_param_t *S, ap_connec
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		//err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -347,7 +351,8 @@ static void ec_18k6c_read_userbank(r2h_connect_t *C, system_param_t *S, ap_conne
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -412,7 +417,8 @@ static void ec_18k6c_write_epc(r2h_connect_t *C, system_param_t *S, ap_connect_t
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -470,7 +476,8 @@ static void ec_18k6c_write_userbank(r2h_connect_t *C, system_param_t *S, ap_conn
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -533,7 +540,8 @@ static void ec_18k6c_set_accesspin(r2h_connect_t *C, system_param_t *S, ap_conne
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -588,7 +596,8 @@ static void ec_18k6c_set_killpin(r2h_connect_t *C, system_param_t *S, ap_connect
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -644,7 +653,8 @@ static void ec_18k6c_lock_operate(r2h_connect_t *C, system_param_t *S, ap_connec
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;
@@ -715,7 +725,8 @@ static void ec_18k6c_tag_kill(r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		goto out;
 	}
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;

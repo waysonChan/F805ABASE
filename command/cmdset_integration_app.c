@@ -85,7 +85,8 @@ static void ec_r2000_fw_update(r2h_connect_t *C, system_param_t *S, ap_connect_t
 	uint8_t err = CMD_EXE_SUCCESS;
 	const uint8_t *cmd_param = C->recv.frame.param_buf;
 
-	if (S->work_status != WS_STOP) {
+	if (S->work_status != WS_STOP
+		|| S->pre_cfg.work_mode != WORK_MODE_COMMAND) {
 		log_msg("reader busy");
 		err = ERRCODE_OPT_READERBUSY;
 		goto out;

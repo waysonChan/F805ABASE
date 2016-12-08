@@ -188,7 +188,7 @@ static int r2h_gprs_timer_init(gprs_priv_t *gprs_priv)
 	return 0;
 }
 
-int r2h_gprs_timer_trigger(r2h_connect_t *C)
+int r2h_gprs_timer_trigger(r2h_connect_t *C, system_param_t *S)
 {
 	uint64_t num_exp;
 	if (read(C->gprs_priv.gprs_timer, &num_exp, sizeof(uint64_t)) != sizeof(uint64_t)) {
@@ -196,6 +196,8 @@ int r2h_gprs_timer_trigger(r2h_connect_t *C)
 		return -1;
 	}
 
+	if(S->pre_cfg.work_mode == WORK_MODE_COMMAND)
+		return 0;
 	/* C->conn_type = R2H_GPRS */
 	if (!C->gprs_priv.connected){
 		_r2h_gprs_close(C);
