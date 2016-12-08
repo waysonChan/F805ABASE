@@ -209,7 +209,6 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 		goto out;
 	} else {		
 		S->last_ant_change_time = now;
-		//C->ant_trigger.total_timer_cnt++;
 		if(C->ant_trigger.antenna_cnt[cur_ant] < C->ant_trigger.use_time[cur_ant]){
 			C->ant_trigger.antenna_cnt[cur_ant]++;
 		}
@@ -217,71 +216,48 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 
 
 	//stop this event
-	
 	if(C->set_delay_timer_cnt > S->extended_table[0]){
+		C->set_delay_timer_cnt = 0;
 		for(i = 3; i >= 0; i--){
-			if(S->ant_array[i].enable){
-				if(C->ant_trigger.trigger_bind_style[i] == 0){
+			if(S->ant_array[i].enable){				
+				switch(C->ant_trigger.trigger_bind_style[i]){
+				case 0:
 					C->ant_trigger.current_able_ant &=  ~(1<<i);
-				}else if(C->ant_trigger.use_time[i] == 0)//continue mode 
-					C->ant_trigger.current_able_ant |= 1<<i;
-				else{
+					break;
+				case 1:
+					if( S->gpio_dece.gpio1_val == 0){
+						C->ant_trigger.current_able_ant &=  ~(1<<i);
+					}
+					break;
+				case 2:
+					if( S->gpio_dece.gpio2_val == 0){
+						C->ant_trigger.current_able_ant &=  ~(1<<i);
+					}
+					break;
+				case 3:
+					if( S->gpio_dece.gpio2_val == 0 || S->gpio_dece.gpio1_val == 0){
+						C->ant_trigger.current_able_ant &=  ~(1<<i);
+					}
+					break;//any trigger
+				default:
 					C->ant_trigger.current_able_ant &=  ~(1<<i);
+					break;
 				}
 			}
 		}
-
-		
-		//we must see which ant shuld be stop
-		if(C->set_delay_timer_cnt > S->extended_table[0]){
-			C->ant_trigger.current_able_ant = 0;
-			C->set_delay_timer_cnt = 0;
-			for(i = 3; i >= 0; i--){
-				if(S->ant_array[i].enable){
-					switch(C->ant_trigger.trigger_bind_style[i]){
-					case 0:
-						break;
-					case 1:
-						if( S->gpio_dece.gpio1_val && 
-							C->ant_trigger.antenna_cnt[i] < C->ant_trigger.use_time[i]){
-							C->ant_trigger.current_able_ant |= 1<<i;
-							S->cur_ant = i+1;
-						}
-						break;
-					case 2:
-						if( S->gpio_dece.gpio2_val && 
-							C->ant_trigger.antenna_cnt[i] < C->ant_trigger.use_time[i]){
-							C->ant_trigger.current_able_ant |= 1<<i;
-							S->cur_ant = i+1;
-						}
-						break;
-					case 3:
-						 /*if((S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val ) && 
-							C->ant_trigger.antenna_cnt[i] < C->ant_trigger.use_time[i]){
-							C->ant_trigger.current_able_ant |= 1<<i;
-							S->cur_ant = i+1;
-						}*/
-						break;//any trigger
-					default:
-						break;
-					}
-				}
-			}
-			C->set_delay_timer_flag = 0;
-			if(C->ant_trigger.current_able_ant == 0){
-				err = -1;
-				goto out;
-			}
+		C->set_delay_timer_flag = 0;
+		if(C->ant_trigger.current_able_ant == 0){
+			err = -1;
+			goto out;
 		}
 	}
-	
-	
+
 	if(C->ant_trigger.use_time[cur_ant] == 0){
 		C->ant_trigger.antenna_cnt[cur_ant] = 0;
 	} else {
 		if( C->ant_trigger.antenna_cnt[cur_ant] >= C->ant_trigger.use_time[cur_ant]){//S->ant_array[cur_ant].switch_time
 			C->ant_trigger.current_able_ant &=  ~(1<<cur_ant);
-			//C->ant_trigger.antenna_cnt[cur_ant] = 0;			
+			C->ant_trigger.antenna_cnt[cur_ant] = 0;			
 		}
 	}
 	
