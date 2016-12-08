@@ -90,7 +90,7 @@ typedef struct {
 typedef struct {
 	int trigger_bind_style[4];
 	int use_time[4];	
-	int total_timer_cnt;	
+	//int total_timer_cnt;	
 	int total_timer;
 	int antenna_cnt[4];	
 	int current_able_ant;

@@ -298,7 +298,10 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 					cfg_set_pre_cfg(&tmp_val);//修改设备类型支持GPRS
 				}else if(im_val == UPLOAD_MODE_WIFI){
 					tmp_val.dev_type = 0x10;
-					cfg_set_pre_cfg(&tmp_val);//同上
+					cfg_set_pre_cfg(&tmp_val);//修改设备类型支持WIFI
+				}else{
+					tmp_val.dev_type = 0x00;
+					cfg_set_pre_cfg(&tmp_val);//默认为0
 				}
 			} else {
 				err = ERRCODE_CMD_ERRTYPE;

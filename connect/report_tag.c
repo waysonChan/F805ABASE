@@ -108,7 +108,8 @@ void TimeTickTagFilterList(tag_report_t *tag_report)
             {
             	//删除链表
             	tag_report_list_del(tag_report);
-				l = tag_report_list.next;			
+				l = tag_report_list.next;	
+				printf("Del :tag_report->tag_cnt = %d\n",tag_report->tag_cnt);
             } else {
 				l = l->next;
 			}
@@ -379,6 +380,7 @@ int report_tag_send(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag_t 
 	/* 3.(过滤模式)处理 filter_enable */
 	if (A->tag_report.filter_enable){
 		if(tag_report_list_add(A, ptag) == 1){
+			printf("ADD       tag: %02x%02x%02x\n",ptag->data[0],ptag->data[1],ptag->data[2]);
 			ptag->has_append_time = false;
 			return _finally_tag_send(C, S, A, ptag);
 		}else{
@@ -412,6 +414,7 @@ static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
 		/* 将链表中tag写入文件 */
 		total_priv->fail_cnt = 0;
 		total_priv->wait_flag = false;
+		printf("tag_send_ram tag_send_ramtag_send_ram\n");
 		return _tag_storage_write_all(tag_report);
 	} else {
 		/* 发送链表头的tag */
@@ -494,7 +497,7 @@ int gprs_tag_send_header(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 {
 	tag_report_t *tag_report = &A->tag_report;
 	int ret = 0;
-	
+	printf("%s   CNT = %d\n",__FUNCTION__,tag_report->tag_cnt);
 	if (!list_empty(&tag_report_list)) {
 		ret = _tag_storage_write_all(tag_report);
 	} 
@@ -576,6 +579,7 @@ static void flash_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if(S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE){
 		switch(S->pre_cfg.upload_mode){
 		case UPLOAD_MODE_GPRS:
+			//printf("C->conn_type = %d\n",C->conn_type);
 			if(C->gprs_priv.connected){
 				empty_list_to_send_flash(C, S, A);
 			}else if(C->conn_type == R2H_NONE){
@@ -825,7 +829,7 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 				if(status_cnt){
 					C->status_send_from_file = true;
 					triger_status_read(buf);
-					log_msg("timer send trigger from flash : %d\n",status_cnt);
+					//log_msg("timer send trigger from flash : %d\n",status_cnt);
 					send_triggerstatus(C,S,buf,sizeof(buf));
 				}else{
 					return -1;

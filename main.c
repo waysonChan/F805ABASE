@@ -130,7 +130,6 @@ static int conn_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 
 	readset = read_set;
 	writeset = write_set;
-	
 	if (C->gprs_priv.connect_in_progress && FD_ISSET(C->r2h[R2H_GPRS].fd, writeset)) {
 		r2h_gprs_conn_check(C);
 	}

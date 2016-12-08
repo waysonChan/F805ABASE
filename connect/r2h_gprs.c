@@ -97,6 +97,8 @@ static ssize_t _gprs_send(r2h_connect_t *C, uint8_t *buf, size_t nbytes)
 
 static int _gprs_connect_try(r2h_connect_t *C)
 {
+	printf("-- %s --\n",__FUNCTION__);
+
 	C->r2h[R2H_GPRS].fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (C->r2h[R2H_GPRS].fd < 0) {
 		log_ret("socket error");
@@ -113,6 +115,7 @@ static int _gprs_connect_try(r2h_connect_t *C)
 		if (errno == EINPROGRESS) {
 			/* nonblocking and the connection cannot be completed immediately */
 			C->gprs_priv.connect_in_progress = true;
+			printf("-- %s -%d-\n",__FUNCTION__,__LINE__);
 			return 0;
 		}
 		
@@ -151,7 +154,7 @@ void r2h_gprs_conn_check(r2h_connect_t *C)
 	
 	ret = getsockopt(C->r2h[R2H_GPRS].fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
 	if (ret < 0 || optval != 0) {
-		log_msg("main: gprs upload connect unsuccessfully");
+		log_msg("main: gprs upload connect fail!");
 		_r2h_gprs_close(C);
 		if (optval)
 			errno = optval;
@@ -162,6 +165,7 @@ void r2h_gprs_conn_check(r2h_connect_t *C)
 	}
 	
 	C->gprs_priv.connect_in_progress = false;
+	printf("-- %s --\n",__FUNCTION__);
 }
 
 static int r2h_gprs_timer_init(gprs_priv_t *gprs_priv)
@@ -201,6 +205,7 @@ int r2h_gprs_timer_trigger(r2h_connect_t *C)
 		_r2h_gprs_close(C);
 		_gprs_connect_try(C);
 	}
+
 
 	return 0;
 }
