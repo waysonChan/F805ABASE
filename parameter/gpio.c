@@ -198,6 +198,7 @@ static inline int get_next_enabled_ant(system_param_t *S, int cur_ant_index)
 
 int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t *A) {
 	int err = 0;
+	//int c;
 	int next_ant_index,next_ant,i;
 	struct timeval now;
 	gettimeofday(&now, NULL);
@@ -234,7 +235,14 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 					}
 					break;
 				case 3:
-					if( S->gpio_dece.gpio2_val == 0 || S->gpio_dece.gpio1_val == 0){
+					if( S->gpio_dece.gpio2_val == 1 || S->gpio_dece.gpio1_val ==1){
+						if(C->ant_trigger.use_time>0){
+							C->ant_trigger.current_able_ant &=  ~(1<<i);
+						} else{
+							C->ant_trigger.current_able_ant |=  1<<i;
+						}
+					}else 
+					{
 						C->ant_trigger.current_able_ant &=  ~(1<<i);
 					}
 					break;//any trigger

@@ -1324,21 +1324,21 @@ static int trigger_send_cmd(r2h_connect_t *C, system_param_t *S, ap_connect_t *A
 					if( S->gpio_dece.gpio1_val && style == 1){
 						C->ant_trigger.current_able_ant |= 1<<i;
 						C->ant_trigger.antenna_cnt[i] = 0;
-						S->cur_ant = i+1;
+						//S->cur_ant = i+1;
 					}
 					break;
 				case 2:
 					if( S->gpio_dece.gpio2_val && style == 2){
 						C->ant_trigger.current_able_ant |= 1<<i;
 						C->ant_trigger.antenna_cnt[i] = 0;
-						S->cur_ant = i+1;
+						//S->cur_ant = i+1;
 					}
 					break;
 				case 3:
 					if( S->gpio_dece.gpio1_val || S->gpio_dece.gpio2_val ){
 						C->ant_trigger.current_able_ant |= 1<<i;
 						C->ant_trigger.antenna_cnt[i] = 0;
-						S->cur_ant = i+1;
+						//S->cur_ant = i+1;
 					}
 					break;//any trigger
 				default:
@@ -1407,9 +1407,9 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			C->set_delay_timer_cnt = 0; 
 		}
 	} else if(key_vals[1] == 0 && last_val[1] != key_vals[1]){//falen down
-		action_report(S);	
+		action_report(S);
 		S->gpio_dece.gpio2_val = last_val[1];			
-		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_2);					
+		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_2);	
 		//reset to current				
 		S->gpio_dece.gpio2_val = key_vals[1];
 		if(err == 0){

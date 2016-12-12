@@ -204,7 +204,6 @@ int r2h_gprs_timer_trigger(r2h_connect_t *C, system_param_t *S)
 		_gprs_connect_try(C);
 	}
 
-
 	return 0;
 }
 
