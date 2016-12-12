@@ -62,6 +62,13 @@ static void ec_recv_tag_confirm_trigger_tstaus(r2h_connect_t *C, system_param_t 
 }
 
 
+static void ec_recv_confirm_wifi_connect(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
+{
+	if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI && C->wifi_connect == false){
+		C->wifi_connect = true;
+	}
+	return;
+}
 
 
 
@@ -80,6 +87,10 @@ static command_t cmd_recv_tag_confirm_trigger_tstaus = {
 	.execute = ec_recv_tag_confirm_trigger_tstaus,
 };
 
+static command_t cmd_recv_confirm_wifi_connect = {
+	.cmd_id = COMMAND_RECV_CONFIRM_WIFI_CONNECT,
+	.execute = ec_recv_confirm_wifi_connect,
+};
 
 
 /*
@@ -91,5 +102,6 @@ int data_center_init(void)
 	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm);
 	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm_wireless);
 	err |= command_register(&cmdset_data_center, &cmd_recv_tag_confirm_trigger_tstaus);
+	err |= command_register(&cmdset_data_center, &cmd_recv_confirm_wifi_connect);
 	return err;
 }

@@ -124,6 +124,7 @@
 #define COMMAND_RECV_TAG_CONFIRM					0xD0	/* 接收标签确认指令 */
 #define COMMAND_RECV_TAG_CONFIRM_WIRELESS			0xD1  	/* 接收标签确认指令 */
 #define COMMAND_RECV_TAG_CONFIRM_TRIGGER_STATUS		0xD2	/* 接收触发状态确认指令 */
+#define COMMAND_RECV_CONFIRM_WIFI_CONNECT			0xD3	/* 接收确认WIFI  连接指令 */
 
 
 

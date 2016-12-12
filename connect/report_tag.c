@@ -251,7 +251,6 @@ int work_auto_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, tag
 	}
 	C->tmp_send_len = ptag->tag_len;
 	memcpy(C->tmp_send_data,ptag->data,ptag->tag_len);
-
 	ret = command_answer(C, cmd_id, CMD_EXE_SUCCESS, ptag, ptag->tag_len);
 	C->conn_type = R2H_NONE;	/* Биаш */
 	
@@ -582,17 +581,11 @@ static void flash_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 			}
 			break;
 		case UPLOAD_MODE_WIFI:
-			if(C->conn_type == R2H_WIFI && S->work_status == WS_STOP)
-				break;
-			else{
-				if(!empty_list_to_send_flash(C, S, A)){
-					if(C->wifi_connect){
-						C->wifi_connect = false;
-						goto out;
-					}else{
-						wifi_tag_send_header(C, S, A);
-					}
-				}
+			if(C->wifi_connect){
+				C->wifi_connect = false;
+				empty_list_to_send_flash(C, S, A);
+			}else if(C->conn_type == R2H_WIFI || C->conn_type == R2H_NONE){
+				wifi_tag_send_header(C, S, A);
 			}
 			break;
 		case UPLOAD_MODE_TCP:

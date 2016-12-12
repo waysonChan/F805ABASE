@@ -293,7 +293,7 @@ static int r2000_next_operation(r2h_connect_t *C, system_param_t *S, ap_connect_
 			write_mac_register(A, HST_CMD, CMD_18K6CINV);
 		}
 		break;		
-	case WS_READ_EPC_INTURN:
+	case WS_READ_EPC_INTURN:
 		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){			
 			trigger_set_next_antenna(C,S,A);
 			if(C->ant_trigger.current_able_ant > 0){
@@ -588,8 +588,6 @@ int trigger_pre_cfg(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 					C->ant_trigger.total_timer 		+= C->ant_trigger.use_time[i];
 			}
 		}
-		//触发使能时间按轮询周期计算
-		log_msg("total time=%d ms\n",C->ant_trigger.total_timer*100);
 	}
 	
 	return 0;
