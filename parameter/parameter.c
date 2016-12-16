@@ -315,6 +315,7 @@ system_param_t *sys_param_new(void)
 
 	char *sw_ver = "1.4.15";
 	strncpy(S->sysinfo.mcu_swrev, sw_ver, strlen(sw_ver));
+	cfg_set_sysinfo(&S->sysinfo, CFG_MCU_SWREV);
 	log_msg("##########APP Current Version:%s##################",S->sysinfo.mcu_swrev);
 
 	/* ≈‰÷√ eth0 */

@@ -121,6 +121,7 @@ struct r2h_connect {
 	bool accepted;		/* TCP专用 */
 	int tcp_send_symbol;
 	int listener;		/* TCP专用 */
+	int bus_addr;
 	bool wifi_connect;
 	r2h_recv_t recv;
 	r2h_send_t send;

@@ -309,13 +309,12 @@ int work_trigger_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 			log_msg("_finally_tag_send: invalid cmd_id");
 			if((C->wifi_priv.wifi_send_type == SEND_TYPE_NAND||
 				C->gprs_priv.gprs_send_type == SEND_TYPE_NAND ||
-				C->tcp_send_symbol == SEND_TYPE_NAND)
-				&& C->conn_type != R2H_NONE)
+				C->tcp_send_symbol == SEND_TYPE_NAND))
 				cmd_id = S->pre_cfg.oper_mode;
 			else
 				return -1;
 		}
-		
+
 		_append_tag_time(ptag);
 		if(S->gpio_dece.gpio1_val == 1
 			|| S->gpio_dece.gpio2_val == 1
@@ -405,6 +404,8 @@ static int _tag_storage_write_all(tag_report_t *tag_report)
 
 #define MAX_SEND_FAIL_TIMES	5
 
+
+
 static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
 	tag_report_t *tag_report = &A->tag_report;
 	if (total_priv->wait_flag && (total_priv->fail_cnt++ >= MAX_SEND_FAIL_TIMES)) {
@@ -413,7 +414,6 @@ static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
 		total_priv->wait_flag = false;
 		return _tag_storage_write_all(tag_report);
 	} else {
-		/* 发送链表头的tag */
 		total_priv->wait_flag = true;
 		total_priv->send_type = SEND_TYPE_RAM;
 		return 0;
@@ -422,7 +422,6 @@ static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
 
 
 int cmp_tag_list(tag_t *p){
-		/* 1.存在性检查 */
 		struct list_head *l;
 		for (l = tag_report_list.next; l != &tag_report_list; l = l->next) {
 			tag_t *tmp = list_entry(l, tag_t, list);
@@ -805,6 +804,7 @@ int triggerstatus_timer_trigger(r2h_connect_t *C, system_param_t *S )
 		log_ret("S->triggerstatus_timer_trigger read()");
 		return -1;
 	}
+	
 	/*只在WIFI 和GPRS使用*/
 	if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI || S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS){
 

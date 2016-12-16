@@ -221,6 +221,52 @@ int upgrade_f860(ap_connect_t *A, const char *file_name)
 	return 0;
 }
 
+static int re_wirte_cfg(void){
+	char line[1024] = {0};
+	int line_num = 0;
+	FILE *rfp = fopen("/f806/upgrade/f806.cfg", "r");
+	if (rfp == NULL) {
+		log_msg("fopen error");
+		return -1;
+	}
+
+	FILE *rfp_s = fopen("/f806/f806.cfg", "r");
+	if (rfp_s == NULL) {
+		log_msg("fopen error");
+		return -1;
+	}
+
+
+	FILE *wfp = fopen("/f806/tmp", "w+");
+	if (wfp == NULL) {
+		log_msg("fopen error");
+		return -1;
+	}
+	while (fgets(line, sizeof(line), rfp_s) != NULL) {
+		line_num++;
+		if(strstr(line,"ant1")){
+			log_msg("line_num:%d\n",line_num);
+			break;
+		}else
+			fputs(line, wfp);
+	}
+
+	while (fgets(line, sizeof(line), rfp) != NULL) {
+		line_num--;
+		if(line_num > 0)
+			continue;
+		else
+			fputs(line, wfp);
+	}
+
+	fclose(rfp);
+	fclose(wfp);
+	rename("/f806/tmp", "/f806/upgrade/f806.cfg");
+	return 0;
+
+}
+
+
 int upgrade_linux_file(const char *file_name)
 {
 #if 0
@@ -231,6 +277,7 @@ int upgrade_linux_file(const char *file_name)
 	}
 #endif
 	char cmd[MAX_UPGRADE_CMD_LEN] = {0};
+	int err = 0;
 
 	/* rcS  复制到/etc/init.d/   文件夹 */
 	if(!strcmp(file_name,"rcS")){
@@ -247,7 +294,11 @@ int upgrade_linux_file(const char *file_name)
 	/*驱动、配置、应用程序 复制到 f806 文件夹，其他文件保留在upgrade */
 	if(strstr(file_name,".ko") || strstr(file_name,".cfg") || strstr(file_name,"f806A")){
 		if(!strcmp(file_name,"f806.cfg")){
-			system("cp /f806/f806.cfg /f806/f806.cfg.bk");
+			//system("cp /f806/f806.cfg /f806/f806.cfg.bk");
+			err = re_wirte_cfg();//恢复原有信息
+			if(err != 0){
+				return -1;
+			}
 		}
 		snprintf(cmd, MAX_UPGRADE_CMD_LEN, "cp /f806/upgrade/%s /f806/%s", file_name, file_name);
 		if (system(cmd) < 0) {

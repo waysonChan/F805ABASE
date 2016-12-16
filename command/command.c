@@ -12,7 +12,7 @@ static void _reader_operate_afc(r2h_connect_t *C, uint8_t cmd_id,
 {
 	C->send.wbuf[0] = FRAME_HEADER;
 	C->send.wbuf[1] = C->recv.frame.ctrl_field;
-	C->send.wbuf[2] = C->recv.frame.bus_addr;
+	C->send.wbuf[2] = C->bus_addr;//C->recv.frame.bus_addr;
 	C->send.wbuf[3] = sz + 2;	/* 加上 cmd_id 和 result 的长度 */
 	C->send.wbuf[4] = cmd_id;
 	C->send.wbuf[5] = result;
@@ -38,7 +38,7 @@ static void _tag_operate_afc(r2h_connect_t *C, uint8_t cmd_id,
 	if (result != CMD_EXE_SUCCESS) {
 		C->send.wbuf[0] = FRAME_HEADER;
 		C->send.wbuf[1] = C->recv.frame.ctrl_field;
-		C->send.wbuf[2] = C->recv.frame.bus_addr;
+		C->send.wbuf[2] = C->bus_addr;//C->recv.frame.bus_addr;
 		C->send.wbuf[3] = 0x02;		/* NOTE 1 */
 		C->send.wbuf[4] = cmd_id;
 		C->send.wbuf[5] = result;
@@ -48,7 +48,7 @@ static void _tag_operate_afc(r2h_connect_t *C, uint8_t cmd_id,
 	if (cmd_id == COMMAND_18K6C_MAN_SELECT_TAG) {
 		C->send.wbuf[0] = FRAME_HEADER;
 		C->send.wbuf[1] = C->recv.frame.ctrl_field;
-		C->send.wbuf[2] = C->recv.frame.bus_addr;
+		C->send.wbuf[2] = C->bus_addr;//C->recv.frame.bus_addr;
 		C->send.wbuf[3] = sz + 0x02;	/* NOTE 2 */
 		C->send.wbuf[4] = cmd_id;
 		C->send.wbuf[5] = result;
@@ -59,7 +59,7 @@ static void _tag_operate_afc(r2h_connect_t *C, uint8_t cmd_id,
 	} else {
 		C->send.wbuf[0] = FRAME_HEADER;
 		C->send.wbuf[1] = C->recv.frame.ctrl_field;
-		C->send.wbuf[2] = C->recv.frame.bus_addr;
+		C->send.wbuf[2] = C->bus_addr;//C->recv.frame.bus_addr;
 		C->send.wbuf[3] = sz + 0x03;	/* NOTE 3 */
 		C->send.wbuf[4] = cmd_id;
 		C->send.wbuf[5] = result;
