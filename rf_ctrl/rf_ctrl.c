@@ -584,8 +584,6 @@ int trigger_pre_cfg(r2h_connect_t *C, system_param_t *S, ap_connect_t *A){
 			if(S->ant_array[i].enable){
 				C->ant_trigger.trigger_bind_style[i] = S->extended_table[i+1];
 				C->ant_trigger.use_time[i] 	         = S->extended_table[i+5];
-				if(C->ant_trigger.trigger_bind_style[i])
-					C->ant_trigger.total_timer 		+= C->ant_trigger.use_time[i];
 			}
 		}
 	}

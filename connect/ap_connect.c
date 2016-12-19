@@ -46,7 +46,6 @@ ap_connect_t *ap_connect_new(system_param_t *S)
 		snprintf(S->sysinfo.fpga_swrev, READER_FPGA_SWREV_LEN, "%d.%d.%d", 
 			(mac_ver>>24)&0xFF, (mac_ver>>16)&0xFF, (mac_ver>>8)&0xFF);
 	}
-	cfg_set_sysinfo(&S->sysinfo, CFG_FPGA_SWREV);
 
 	r2000_check_freq_std(S, A);
 

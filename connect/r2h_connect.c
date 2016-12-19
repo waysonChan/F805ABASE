@@ -17,7 +17,7 @@ r2h_connect_t *r2h_connect_new(system_param_t *S)
 	C->tcp_send_symbol = SEND_TYPE_RAM;
 	S->action_status.report_status = 0xff;
 
-	C->bus_addr = S->rs232.bus_addr;
+	C->bus_addr = S->rs232.bus_addr;//初始化总线地址
 
 	return C;
 }

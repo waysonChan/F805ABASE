@@ -738,28 +738,12 @@ int heartbeat_timer_trigger(r2h_connect_t *C, system_param_t *S )
 	case UPLOAD_MODE_WIFI:
 		C->conn_type = R2H_WIFI;
 		break;
-	case UPLOAD_MODE_GPRS:
-		C->conn_type = R2H_GPRS;
-		break;
-	case UPLOAD_MODE_RS232:
-		C->conn_type = R2H_RS232;
-		break;
-	case UPLOAD_MODE_TCP:
-		if (C->accepted == true){
-			C->conn_type = R2H_TCP;
-		} else {
-			C->conn_type = R2H_NONE;
-		}
-		break;
-	case UPLOAD_MODE_UDP:
-		C->conn_type = R2H_UDP;
-		break;
 	default:
 		C->conn_type = R2H_NONE;
 		break;
 	}
 	
-	command_answer(C, COMMAND_TRANSMIT_CONTROL_HEARTBEAT, CMD_EXE_SUCCESS, NULL, 0);
+	command_answer(C, COMMAND_RECV_CONFIRM_WIFI_CONNECT, CMD_EXE_SUCCESS, NULL, 0);
 	C->conn_type = temp_conn_type;
 	return 0;
 }

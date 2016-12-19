@@ -37,7 +37,7 @@ static void ec_recv_tag_confirm_wireless(r2h_connect_t *C, system_param_t *S, ap
 		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
 		return;
 	C->wifi_connect = true;
-	if(C->recv.frame.cmd_id == 0xD1){//¹ýÂËÐÄÌø°ü0x58
+	if(C->recv.frame.cmd_id == 0xD1){
 		report_tag_confirm(C,S,A);
 	}
 }

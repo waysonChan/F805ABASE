@@ -235,14 +235,11 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 					}
 					break;
 				case 3:
-					if( S->gpio_dece.gpio2_val == 1 || S->gpio_dece.gpio1_val ==1){
-						if(C->ant_trigger.use_time>0){
+					if( S->gpio_dece.gpio1_val == 1 || S->gpio_dece.gpio2_val == 1){
+						if(C->ant_trigger.use_time[cur_ant] > 0){
 							C->ant_trigger.current_able_ant &=  ~(1<<i);
-						} else{
-							C->ant_trigger.current_able_ant |=  1<<i;
 						}
-					}else 
-					{
+					} else {
 						C->ant_trigger.current_able_ant &=  ~(1<<i);
 					}
 					break;//any trigger
