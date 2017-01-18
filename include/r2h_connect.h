@@ -63,6 +63,7 @@ typedef struct {
 	bool gprs_wait_flag;	/* 等待上位机确认接收标签指令 */
 	int gprs_fail_cnt;	/* 连续发送标签失败次数 */
 	int gprs_send_type;	/* 发送的标签在 RAM 还是 NAND */
+	bool gprs_recv_confirm;
 } gprs_priv_t;
 
 typedef struct {

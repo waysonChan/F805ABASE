@@ -12,7 +12,7 @@ int set_gprs_apn(const char *new_apn);
 int set_apn_user(const char *username);
 int set_apn_passwd(const char *passwd);
 
-int set_gprs_wave(const char *username);
+int replace_one_line(const char *filename, const char *word, const char *username);
 
 size_t replace_keyword(uint8_t *buf, size_t sz);
 inline uint16_t crc_16_byte(uint8_t byte, uint16_t last_crc);

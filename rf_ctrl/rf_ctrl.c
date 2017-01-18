@@ -37,11 +37,11 @@ static void _set_ant_power(ap_connect_t *A)
 	write_mac_register(A, HST_ANT_DESC_CFG, 0x1);
 	write_mac_register(A, HST_ANT_DESC_PORTDEF, 0x0);
 	write_mac_register(A, HST_ANT_DESC_DWELL, 2000);
-	if(A->cur_ant_power < 0x0B){
+	if(A->cur_ant_power < 0x0B){//0-10  -->  20-30
 		write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
 		log_msg("set rfpower = %d", A->cur_ant_power+20);
-	} else {
-		write_mac_register(A, HST_ANT_DESC_RFPOWER, (A->cur_ant_power - 0x10));
+	} else if(A->cur_ant_power >= 0x10 && A->cur_ant_power <= 0x23) {//16-35  --> 0-19
+		write_mac_register(A, HST_ANT_DESC_RFPOWER, (A->cur_ant_power - 0x10)*10);
 		log_msg("set rfpower = %d", A->cur_ant_power-0x10);
 	}
 }
@@ -694,8 +694,8 @@ int r2000_set_ant_rfpower(system_param_t *S, ap_connect_t *A)
 	if(A->cur_ant_power < 0x0B){
 		write_mac_register(A, HST_ANT_DESC_RFPOWER, RFPOWER_F806_TO_R2000(A->cur_ant_power));
 		log_msg("set rfpower = %d", A->cur_ant_power+20);
-	} else {
-		write_mac_register(A, HST_ANT_DESC_RFPOWER, (A->cur_ant_power - 0x10));
+	}  else if(A->cur_ant_power >= 0x10 && A->cur_ant_power <= 0x23) {//16-35  --> 0-19
+		write_mac_register(A, HST_ANT_DESC_RFPOWER, (A->cur_ant_power - 0x10)*10);
 		log_msg("set rfpower = %d", A->cur_ant_power-0x10);
 	}
 	return 0;

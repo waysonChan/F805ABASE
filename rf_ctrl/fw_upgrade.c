@@ -280,21 +280,38 @@ int upgrade_linux_file(const char *file_name)
 	int err = 0;
 
 	/* rcS  复制到/etc/init.d/   文件夹 */
-	if(!strcmp(file_name,"rcS")){
-		system("cp /etc/init.d/rcS /etc/init.d/rcS_bk");
+	if(!strcmp(file_name,"rcS") || strstr(file_name,".sh")){
 		snprintf(cmd, MAX_UPGRADE_CMD_LEN, "cp /f806/upgrade/%s /etc/init.d/%s", file_name, file_name);
 		if (system(cmd) < 0) {
 			log_msg("system error");
 			return -1;
 		}
-		chmod("/etc/init.d/rcS",S_IRUSR|S_IWUSR|S_IXUSR | S_IRGRP|S_IXGRP | S_IXOTH);
+		snprintf(cmd, MAX_UPGRADE_CMD_LEN, "/etc/init.d/%s", file_name);
+		chmod(cmd,S_IRUSR|S_IWUSR|S_IXUSR | S_IRGRP|S_IXGRP | S_IXOTH);
+		return 0;
+	}
+
+	if(!strcmp(file_name,"gprs-wave")){
+		snprintf(cmd, MAX_UPGRADE_CMD_LEN, "cp /f806/upgrade/%s /etc/ppp/peers/%s", file_name, file_name);
+		if (system(cmd) < 0) {
+			log_msg("system error");
+			return -1;
+		}
+		return 0;
+	}
+	if(!strcmp(file_name,"chap-secrets")){
+		snprintf(cmd, MAX_UPGRADE_CMD_LEN, "cp /f806/upgrade/%s /etc/ppp/%s", file_name, file_name);
+		if (system(cmd) < 0) {
+			log_msg("system error");
+			return -1;
+		}
+		chmod("/etc/ppp/chap-secrets",S_IRUSR|S_IWUSR| S_IRGRP);
 		return 0;
 	}
 
 	/*驱动、配置、应用程序 复制到 f806 文件夹，其他文件保留在upgrade */
 	if(strstr(file_name,".ko") || strstr(file_name,".cfg") || strstr(file_name,"f806A")){
 		if(!strcmp(file_name,"f806.cfg")){
-			//system("cp /f806/f806.cfg /f806/f806.cfg.bk");
 			err = re_wirte_cfg();//恢复原有信息
 			if(err != 0){
 				return -1;

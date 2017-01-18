@@ -103,7 +103,8 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			memcpy(S->data_center.username, cmd_param+3, len);
 			cfg_set_data_center(&S->data_center);
 			set_apn_user(S->data_center.username);
-			set_gprs_wave(S->data_center.username);
+			replace_one_line("/etc/ppp/peers/gprs-wave", "user ", S->data_center.username);
+			//set_gprs_wave(S->data_center.username);
 			break;
 		case 124:	/* dsc passwd */
 			len  = C->recv.frame.param_len - 4;//减去命令字等长度
@@ -323,6 +324,11 @@ static void ec_param_table_man(r2h_connect_t *C, system_param_t *S, ap_connect_t
 			}
 
 			sp_set_dsc_ip(S, cmd_param+3);
+			replace_one_line("/etc/init.d/daemon.sh", "SERVER_IP=", S->data_center.ip);
+			if (system("chmod +x /etc/init.d/daemon.sh") < 0) {
+				log_msg("system error");
+				goto out;
+			}
 			break;
 		case 254:	/* dsc tcp port */
 			if (len != DSC_TCP_PORT_LEN) {

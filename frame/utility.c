@@ -107,11 +107,11 @@ int set_apn_passwd(const char *passwd){
 }
 
 
-int set_gprs_wave(const char *username)
+int replace_one_line(const char *filename, const char *word, const char *username)
 {
 	char line[1024] = {0};
 
-	FILE *rfp = fopen("/etc/ppp/peers/gprs-wave", "r");
+	FILE *rfp = fopen(filename, "r");//"/etc/ppp/peers/gprs-wave"
 	if (rfp == NULL) {
 		log_msg("fopen error");
 		return -1;
@@ -124,10 +124,10 @@ int set_gprs_wave(const char *username)
 	}
 
 	while (fgets(line, sizeof(line), rfp) != NULL) {
-		char *ret = strstr(line, "user");
+		char *ret = strstr(line, word);
 		if (ret) {
 			char rep_line[256] = {0};
-			snprintf(rep_line, sizeof(rep_line), "user %s\n", username);
+			snprintf(rep_line, sizeof(rep_line), "%s%s\n", word, username);
 			fputs(rep_line, wfp);
 		} else {
 			fputs(line, wfp);
@@ -136,7 +136,7 @@ int set_gprs_wave(const char *username)
 
 	fclose(rfp);
 	fclose(wfp);
-	rename("/f806/tmp", "/etc/ppp/peers/gprs-wave");
+	rename("/f806/tmp", filename);
 	return 0;
 }
 

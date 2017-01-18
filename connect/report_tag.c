@@ -407,12 +407,13 @@ static int _tag_storage_write_all(tag_report_t *tag_report)
 
 
 static int tag_send_ram (total_priv_t *total_priv, ap_connect_t *A){
-	tag_report_t *tag_report = &A->tag_report;
+	//tag_report_t *tag_report = &A->tag_report;
 	if (total_priv->wait_flag && (total_priv->fail_cnt++ >= MAX_SEND_FAIL_TIMES)) {
 		/* 将链表中tag写入文件 */
 		total_priv->fail_cnt = 0;
 		total_priv->wait_flag = false;
-		return _tag_storage_write_all(tag_report);
+		//return _tag_storage_write_all(tag_report);
+		return 0;
 	} else {
 		total_priv->wait_flag = true;
 		total_priv->send_type = SEND_TYPE_RAM;
@@ -573,9 +574,10 @@ static void flash_send_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	if(S->pre_cfg.flash_enable == NAND_FLASH_ENBABLE){
 		switch(S->pre_cfg.upload_mode){
 		case UPLOAD_MODE_GPRS:
-			if(C->gprs_priv.connected){
+			if(C->gprs_priv.connected == true || C->gprs_priv.gprs_recv_confirm == true){
+				C->gprs_priv.gprs_recv_confirm = false;
 				empty_list_to_send_flash(C, S, A);
-			}else if(C->conn_type == R2H_NONE){
+			}else if(C->conn_type == R2H_NONE || C->gprs_priv.gprs_recv_confirm == false ){
 				gprs_tag_send_header(C, S, A);
 			}
 			break;
@@ -737,6 +739,9 @@ int heartbeat_timer_trigger(r2h_connect_t *C, system_param_t *S )
 	switch(S->pre_cfg.upload_mode) {
 	case UPLOAD_MODE_WIFI:
 		C->conn_type = R2H_WIFI;
+		break;
+	case UPLOAD_MODE_GPRS:
+		C->conn_type = R2H_GPRS;
 		break;
 	default:
 		C->conn_type = R2H_NONE;

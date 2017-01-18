@@ -66,14 +66,14 @@ static int set_select_para(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 
 	for (i = 0; i < R2H_TOTAL; i++) {
 		if (((i == R2H_TCP) && (!C->accepted))
-			|| ((i == R2H_GPRS) && (C->gprs_priv.connect_in_progress))
+			|| ((i == R2H_GPRS) && (!C->gprs_priv.connected))
 			|| (C->r2h[i].fd < 0))
 			continue;
 		maxfd = MAX(maxfd, C->r2h[i].fd);
 		FD_SET(C->r2h[i].fd, readset);
 	}
 
-	if (C->gprs_priv.connect_in_progress) {
+	if (C->gprs_priv.connect_in_progress && C->r2h[R2H_GPRS].fd >= 0) {
 		maxfd = MAX(maxfd, C->r2h[R2H_GPRS].fd);
 		FD_SET(C->r2h[R2H_GPRS].fd, writeset);
 	}
@@ -120,7 +120,6 @@ static int timer_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A,
 			gpo_pulse_timer_trigger(i, S->gpo[i].pulse_timer);
 		}
 	}
-
 	return 0; 
 }
 
@@ -130,8 +129,11 @@ static int conn_operation(r2h_connect_t *C, system_param_t *S, ap_connect_t *A, 
 
 	readset = read_set;
 	writeset = write_set;
-	if (C->gprs_priv.connect_in_progress && FD_ISSET(C->r2h[R2H_GPRS].fd, writeset)) {
-		r2h_gprs_conn_check(C);
+
+	if (C->gprs_priv.connect_in_progress && C->r2h[R2H_GPRS].fd >= 0){
+		if(FD_ISSET(C->r2h[R2H_GPRS].fd, writeset)) {
+			r2h_gprs_conn_check(C);
+		}
 	}
 
 	if (FD_ISSET(C->listener, readset)) {

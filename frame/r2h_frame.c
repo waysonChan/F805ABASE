@@ -117,12 +117,15 @@ static inline int r2h_frame_parse_buf(r2h_connect_t *C)
 		F->last_byte = 0;
 		switch (_r2h_frame_parse_byte(C, *ptr)) {
 		case FRAME_COMPLETE:
+			return FRAME_COMPLETE;
+#if 0
 			if(C->recv.frame.bus_addr == 0 || C->recv.frame.bus_addr == C->bus_addr){
 				return FRAME_COMPLETE;
 			}else{
 				log_msg("bus_addr error \n");
 				return FRAME_PAMERROR;
 			}
+#endif
 		case FRAME_UNCOMPLETE:
 			break;
 		case FRAME_CRCERROR:

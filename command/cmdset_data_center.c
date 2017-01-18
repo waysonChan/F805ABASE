@@ -37,6 +37,7 @@ static void ec_recv_tag_confirm_wireless(r2h_connect_t *C, system_param_t *S, ap
 		|| S->pre_cfg.flash_enable == NAND_FLASH_DISABLE)
 		return;
 	C->wifi_connect = true;
+	C->gprs_priv.gprs_recv_confirm = true;
 	if(C->recv.frame.cmd_id == 0xD1){
 		report_tag_confirm(C,S,A);
 	}
@@ -66,6 +67,9 @@ static void ec_recv_confirm_wifi_connect(r2h_connect_t *C, system_param_t *S, ap
 {
 	if(S->pre_cfg.upload_mode == UPLOAD_MODE_WIFI && C->wifi_connect == false){
 		C->wifi_connect = true;
+	}
+	if(S->pre_cfg.upload_mode == UPLOAD_MODE_GPRS){
+		C->gprs_priv.gprs_recv_confirm = true;
 	}
 	return;
 }

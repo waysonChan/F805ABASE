@@ -114,8 +114,9 @@ static int _gprs_connect_try(r2h_connect_t *C)
 			/* nonblocking and the connection cannot be completed immediately */
 			C->gprs_priv.connect_in_progress = true;
 			return 0;
+		}else{
+			C->gprs_priv.connect_in_progress = false;
 		}
-		
 		log_ret("connect error");
 		goto out;
 	}
@@ -148,7 +149,7 @@ void r2h_gprs_conn_check(r2h_connect_t *C)
 {
 	int optval, ret;
 	socklen_t optlen = sizeof(optval);
-	
+
 	ret = getsockopt(C->r2h[R2H_GPRS].fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
 	if (ret < 0 || optval != 0) {
 		log_msg("main: gprs upload connect fail!");
