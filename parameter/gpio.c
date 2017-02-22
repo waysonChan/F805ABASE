@@ -12,7 +12,7 @@
 #include <sys/time.h>
 
 static int btns_fd;
-extern int IO_VAL[2];
+//extern int IO_VAL[2];
 static gpio_t gpio[] = {
 	/* LED1_GREEN */
 	{
@@ -211,7 +211,18 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 	} else {		
 		S->last_ant_change_time = now;
 		if(C->ant_trigger.antenna_cnt[cur_ant] < C->ant_trigger.use_time[cur_ant]){
-			C->ant_trigger.antenna_cnt[cur_ant]++;
+			if(C->ant_trigger.trigger_bind_style[cur_ant] == 1 &&
+				S->gpio_dece.gpio1_val == 1){
+				C->ant_trigger.antenna_cnt[cur_ant]++;
+			}
+			if(C->ant_trigger.trigger_bind_style[cur_ant] == 2 &&
+				S->gpio_dece.gpio2_val == 1){
+				C->ant_trigger.antenna_cnt[cur_ant]++;
+			}
+			if(C->ant_trigger.trigger_bind_style[cur_ant] == 3 &&
+				(!C->set_delay_timer_flag || S->gpio_dece.gpio1_val == 1 || S->gpio_dece.gpio2_val == 1)){
+				C->ant_trigger.antenna_cnt[cur_ant]++;
+			}
 		}
 	}
 
@@ -236,8 +247,10 @@ int trigger_set_next_antenna (r2h_connect_t *C, system_param_t *S, ap_connect_t 
 					break;
 				case 3:
 					if( S->gpio_dece.gpio1_val == 1 || S->gpio_dece.gpio2_val == 1){
-						if(C->ant_trigger.use_time[cur_ant] > 0){
-							C->ant_trigger.current_able_ant &=  ~(1<<i);
+						if(C->ant_trigger.use_time[i] > 0){//是否为连续模式
+							if(C->ant_trigger.antenna_cnt[i] >= C->ant_trigger.use_time[i]){
+								C->ant_trigger.current_able_ant &=  ~(1<<i);
+							}
 						}
 					} else {
 						C->ant_trigger.current_able_ant &=  ~(1<<i);

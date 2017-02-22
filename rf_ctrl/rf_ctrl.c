@@ -279,7 +279,7 @@ static int r2000_next_operation(r2h_connect_t *C, system_param_t *S, ap_connect_
 	r2000_error_check(C, S, A);
 	switch (S->work_status) {
 	case WS_READ_EPC_FIXED:
-		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){			
+		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
 			trigger_set_next_antenna(C,S,A);
 			if(C->ant_trigger.current_able_ant > 0){
 				r2000_set_ant_rfpower(S, A);
@@ -294,7 +294,7 @@ static int r2000_next_operation(r2h_connect_t *C, system_param_t *S, ap_connect_
 		}
 		break;		
 	case WS_READ_EPC_INTURN:
-		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){			
+		if(S->pre_cfg.work_mode == WORK_MODE_TRIGGER){
 			trigger_set_next_antenna(C,S,A);
 			if(C->ant_trigger.current_able_ant > 0){
 				r2000_set_ant_rfpower(S, A);
@@ -1385,7 +1385,12 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 	} else if(key_vals[0] == 0 && last_val[0] != key_vals[0]){//falen down
 		action_report(S);
 		S->gpio_dece.gpio1_val = last_val[0];
-		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_1);					
+		if(S->extended_table[0] != 0){
+			err = trigger_send_cmd(C,S,A,TRIGGER_PORT_1);
+		}else{
+			err = 0;
+		}
+
 		//reset to current	
 		S->gpio_dece.gpio1_val = key_vals[0];
 		if(err == 0){
@@ -1397,15 +1402,19 @@ int trigger_to_read_tag(r2h_connect_t *C, system_param_t *S, ap_connect_t *A)
 
 	if(key_vals[1]== 1 && last_val[1] != key_vals[1]){//raise up
 		action_identify(S,key_vals[0],key_vals[1]);
-		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_2);		
+		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_2);
 		if(err == 0){
 			C->set_delay_timer_flag = 0;
 			C->set_delay_timer_cnt = 0; 
 		}
 	} else if(key_vals[1] == 0 && last_val[1] != key_vals[1]){//falen down
 		action_report(S);
-		S->gpio_dece.gpio2_val = last_val[1];			
-		err = trigger_send_cmd(C,S,A,TRIGGER_PORT_2);	
+		S->gpio_dece.gpio2_val = last_val[1];
+		if(S->extended_table[0] != 0){
+			err = trigger_send_cmd(C,S,A,TRIGGER_PORT_2);
+		}else{
+			err = 0;
+		}
 		//reset to current				
 		S->gpio_dece.gpio2_val = key_vals[1];
 		if(err == 0){
